@@ -4,14 +4,18 @@
 ; Vesion: 1.0
 ; Last Edited: 8/12/2022
 ;
-; Jump instruction offset calculation
-; offset start from 0, every time +2
-; start address of the program: 0x4000
-; to calculate the offset, use current address - start address
-; for example: jmp 0 (jump to the beginning of the program)
-; the memory value of jmp 0 = 3FAD = 16301
-; the memory value of jmp 2 = 3FAE = 16302
-; offset = (current addres - start address) / 2
+;--------------------------------------------------------------------------------
+; MSP430 jump instruction encoding calculation
+; 001   ,         111    ,      0100010011
+; op code, unconditional jump, 10 bits 2's complement representation offset
+; formula: PC(new) = PC(old) + 2 + PC(offset) * 2
+; in this complementation we use 001,111,0000000000(0x3C00) + calculation offset
+;
+; MSP430 jump instruction calculation
+; jmp 0
+; jmp to the absolute address related to start address
+; start address of the program: 0x4000 (can be set through .cmd file)
+; to calculate the jmp instruction, use current address - start address
 ;
 ;-------------------------------------------------------------------------------
             .cdecls C,LIST,"msp430.h"       ; Include device header file
@@ -40,6 +44,7 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
  			.data
 up_signal	.byte   0x0001
 free_addr	.word	0x4300; 				; dac: 17032, point to the start of free space
+jmp_base	.word	0x3C00					; the base value (exclude offset) of unconditional jump
 			.text
 _main
 SetupP1     bic.b   #BIT0,&P1OUT            ; Clear P1.0 output latch for a defined power-on state
@@ -67,8 +72,8 @@ init		mov.w	#0x000A,index
 			mov.w	#0xFFFF,buffer+6
 			mov.w	#0xFFFF,buffer+8
 			mov.w	#0x0000,buffer+10		; op code
-			mov.w	#0x40DA,buffer+12		; destination
-			mov.w	#0x0011,buffer+14		; length (in words)
+			mov.w	#0x40D8,buffer+12		; destination
+			mov.w	#0x0002,buffer+14		; length (in words)
 			mov.w	#0x0001,buffer+16		; backup instruction size
 			mov.w	#0xE3E2,buffer+18		; data
 			mov.w	#0x0202,buffer+20
@@ -93,7 +98,6 @@ init		mov.w	#0x000A,index
 			mov.w	#0xFFFF,buffer+58
 
 mainloop
-
 led			xor.b   #BIT0,&P1OUT            ; Toggle P1.1 BIT0 Red, BIT1 Green
 			call 	#wait
 ;			xor.b   #BIT0,&P1OUT            ; Toggle P1.0
@@ -105,7 +109,7 @@ math8bit	mov.b	#0x0002,R13
 			mov.b	#0x0003,R13
 			mov.b	#0x000c,R12
 			add.b   R13,R12				; Addition
-;			nop
+			; jmp 768 = 3D13(new loc), jmp 216 = 3FFF(old loc)
 
 math32bit	mov.w   #0x0075,R14
 			mov.w   #0x00a8,R15
@@ -139,14 +143,9 @@ L1          dec.w   R5                     	; Decrement R15
             ret
 
 __mspabi_mpyi_f5hw:
-			push    SR 						; Save current interrupt state
-			dint    						; Disable interrupt
-			nop    							; Account for latency
 			mov.w   R13,&MPY32_MPY			; Load operand 1 into multiplier
 			mov.w   R12,&MPY32_OP2			; Load operand 2 which triggers MPY
 			mov.w   &MPY32_RESLO,R12		; Move result into return register
-			pop.w   SR
-			nop     						; CPU19 Compatibility
 			ret
 
 ;------
@@ -183,11 +182,13 @@ div_l4	    ret            ;3C
 ; Function: 	decode
 ; Description:  decode update instructions
 ; Register Use: R10: data start address
-;				R9:	 free address
+;				R9:	 current free address pointer
 ;				R8:  destination address
 ;               R7:  length
 ;               R6:  backup size
 ;------------------------------------------
+; to do: change op => R9, use a temp register instead.
+; so R9 can dedicated to address pointer
 decode:		mov.w	#buffer,R10
 			add.w	index,R10
 			mov.w	0(R10), R9		 		; read op code
@@ -197,59 +198,62 @@ decode_ins	mov.w	2(R10),R8				; destination address
     		mov.w	4(R10),R7				; length
     		mov.w	6(R10),R6				; backup size
 	    	add.w	#8,R10					; start data address
-	    	mov.w	free_addr,R9
-			cmp		#2,R6
-			jnz		decode_l1
-			mov.w	R8,R15					; temp R15
-			sub.w	#2,R15
-			mov.w	@R15,0(R9)			; write to free space
-			mov.w	0(R8),2(R9)
-			add.w	#4,R9
-			jmp 	decode_l2
-decode_l1	mov.w	0(R8),0(R9)			; Need Testinggggggggggggggggggggggg
-			add.w	#2,R9
-decode_l2   mov.w	R9,free_addr			; update free_addr
-			sub.w	#0x4000,R9				; sub base address, get jump offset
-			mov.w	R9,R13
+	    	mov.w	free_addr,R9			; load free_addr
+			cmp		#2,R6					; based on backup size run different code
+			jnz		decode_ins1				; need testingggggggggggggggggggggggggggggggggggggggggggggggggggg
+			mov.w	-2(R8),0(R9)			; copy last two instruction to new location (1)
+			mov.w	0(R8),2(R9)				; copy last two instruction to new location	(2)
+			add.w	#4,R9					; update current free address
+			jmp 	decode_ins2
+decode_ins1	mov.w	0(R8),0(R9)				; copy last instruction to new location
+			add.w	#2,R9					; update current free address
+decode_ins2 mov.w	free_addr,R11
+			sub.w	R8,R11					; calculate offset
+			sub.w	#2,R11
+			mov.w	R11,R13
 			mov.w	#2,R14
 			call 	#div					; R13/R14, result stored in R15
-			add.w	#0x3FAD,R15				; add value of "jmp 0"
-			cmp		#2,R6
-			jnz		decode_l3
+			add.w	jmp_base,R15			; add jump base value
+			cmp		#2,R6					; write jump instruction in different location
+			jnz		decode_ins3
 			mov.w	R15,-2(R8)
-			jmp		update
-decode_l3	mov.w	R15,0(R8)
+			jmp		decode_end
+decode_ins3	mov.w	R15,0(R8)
+			;mov.w	#0x3D13,0(R8)			; use precalculate value to test jump
+			jmp		decode_end
 decode_mod  cmp 	#1,R9
     		jnz 	decode_del
     		nop
-    		jmp		update
+    		jmp		decode_end
 decode_del  cmp 	#2,R9
     		jnz 	decode_cop
     		nop
-    		jmp 	update
+    		jmp 	decode_end
 decode_cop  cmp 	#3,R9
     		jnz 	mainloop
     		nop
+decode_end	call 	#update
+			ret
 
 ; current update, if need to replace last 2 instructions, one empty space will be left.
-update:		mov.w	free_addr,R9
-update_l1	dec.w   R7                   	; Decrement R7
+update:		dec.w   R7                   	; Decrement R7
 			mov.w	0(R10),0(R9)
 			add.w	#2,R10
 			add.w	#2,R9
 			cmp		#0,R7
-	        jnz     update_l1               ; Delay over?
-	        sub.w	#0x4000,R8
-	        mov.w	R0,R13
+	        jnz     update               	; Update done?
+	        sub.w	R9,R8					; Calculate jump back instruction
+	        								; should +2 to next instruction, and -2 to calculate offset, cancelled here
+	        mov.w	R8,R13
 	        mov.w	#2,R14
-	        call	#div
-	        add.w	#0x3FAD,R15
+	        call	#div					; R13/R14, result stored in R15
+	        and.w	#0000001111111111b,R15	; bit masking, clear upper 6 bits
+	        add.w	jmp_base,R15
 	        mov.w	R15,0(R9)
+	        ;mov.w	#0x3AE9,0(R9)			; Testing jump
 	        add.w	#2,R9
 cleanup		mov.w	R9,free_addr
 			mov.b	#0,up_signal
-;			mov.w	R9,R6			; calculate new free address
-;			mov.w	R6,free_addr	; update free address
 			ret
 
 math16bit	xor.b   #BIT1,&P1OUT            ; Toggle P1.1 BIT0 Red, BIT1 Green
