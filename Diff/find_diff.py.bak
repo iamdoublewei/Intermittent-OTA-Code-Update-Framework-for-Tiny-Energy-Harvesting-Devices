@@ -1,3 +1,6 @@
+# Author: Wei Wei
+# Last edited: 8/24/2022
+#
 # export memory values from CCS
 # CCS -> View -> Memory Browser
 # Format: 16-Bit Unsigned Int
