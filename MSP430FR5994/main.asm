@@ -1,8 +1,9 @@
 ;-------------------------------------------------------------------------------
-; MSP430 OTA code upate
+; Assembly upate
 ; Author: Wei Wei
 ; Vesion: 1.0
-; Last Edited: 8/12/2022
+; Last Edited: 8/24/2022
+; Email: iamdoublewei@gmail.com
 ;
 ;--------------------------------------------------------------------------------
 ; MSP430 jump instruction encoding calculation
@@ -16,7 +17,8 @@
 ; jmp to the absolute address related to start address
 ; start address of the program: 0x4000 (can be set through .cmd file)
 ; to calculate the jmp instruction, use current address - start address
-;
+;-------------------------------------------------------------------------------
+
 ;-------------------------------------------------------------------------------
             .cdecls C,LIST,"msp430.h"       ; Include device header file
             
@@ -36,15 +38,25 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 
 
 ;-------------------------------------------------------------------------------
-; Main loop here
+; Main code here
 ;-------------------------------------------------------------------------------
-	     	.bss 	buffer,60	         	; Allocate 40 bytes (20 words) in FRAM for
+;-------------------------------------------------------------------------------
+; Research Notes:
+; 1. To serve the research purpose and avoid some function call instructions or jump
+; 	 instructions. This project intentionally make some duplicated code which may looks
+;	 unnecessary and messy.
+; Current Thinking:
+; 1. How to define update and decode, should we seperate into two functions or combine
+; 2. Unavoidable to replace a jump instruction. Maybe also need to remove backup size from encoding
+; 3. Seperate modify into replacement and insert
+;-------------------------------------------------------------------------------
+	     	.bss 	buffer,60	         	; Allocate 60 bytes (30 words) in FRAM for
 											; decoded update instructions
-			.bss	index,2					; index for round-robin buffer
+			.bss	index,2					; Index for round-robin buffer
  			.data
 up_signal	.byte   0x0001
-free_addr	.word	0x4300; 				; dac: 17032, point to the start of free space
-jmp_base	.word	0x3C00					; the base value (exclude offset) of unconditional jump
+free_addr	.word	0x4300	 				; Pointer for the start of allocated update memory
+jmp_base	.word	0x3C00					; The base value (exclude offset) of unconditional jump
 			.text
 _main
 SetupP1     bic.b   #BIT0,&P1OUT            ; Clear P1.0 output latch for a defined power-on state
@@ -65,6 +77,10 @@ MPY32_OP2H	.equ	0x04E2
 MPY32_RES0	.equ	0x04E4
 MPY32_RES1	.equ	0x04E6
 
+;-------------------------------------------------------------------------------
+; Intialize update buffer
+; Assume update package received in the buffer
+;-------------------------------------------------------------------------------
 init		mov.w	#0x000A,index
 			mov.w	#0xFFFF,buffer
 			mov.w	#0xFFFF,buffer+2
@@ -98,25 +114,50 @@ init		mov.w	#0x000A,index
 			mov.w	#0xFFFF,buffer+58
 
 mainloop
-led			xor.b   #BIT0,&P1OUT            ; Toggle P1.1 BIT0 Red, BIT1 Green
-			call 	#wait
-;			xor.b   #BIT0,&P1OUT            ; Toggle P1.0
+;-------------------------------------------------------------------------------
+; LED blinking for indication
+; 1. BIT0 - toggle red LED.
+; 2. BIT1 - toggle green LED.
+; 3. wait - delay 1 second.
+;-------------------------------------------------------------------------------
+led			xor.b   #BIT0,&P1OUT            ; Toggle P1.0, Red LED
+	       	call 	#wait
+;			xor.b   #BIT0,&P1OUT            ; Toggle P1.1, Green LED
 ;			call 	#wait
 
-math8bit	mov.b	#0x0002,R13
+;-------------------------------------------------------------------------------
+; Benchmarks
+; 1. 8 bit math: multiplication, division, subtraction and addition
+; 2. 16 bit math: multiplication, division, subtraction and addition
+; 3. 32 bit math: multiplication, division, subtraction and addition
+;-------------------------------------------------------------------------------
+math8bit	mov.b	#0x0002,R13				; Multiplication
 			mov.b	#0x0004,R12
-			call 	#__mspabi_mpyi_f5hw	; Multiplication
-			mov.b	#0x0003,R13
+			mov.w   R13,&MPY32_MPY			; Load operand 1 into multiplier
+			mov.w   R12,&MPY32_OP2			; Load operand 2 which triggers MPY
+			mov.w   &MPY32_RESLO,R12		; Move result into return register
+			mov.b	#0x0003,R13				; Addition
 			mov.b	#0x000c,R12
-			add.b   R13,R12				; Addition
-			; jmp 768 = 3D13(new loc), jmp 216 = 3FFF(old loc)
+			add.b   R13,R12
+
+;math16bit	mov.w	#0x00e7,R13
+;			mov.w	#0x000c,R12
+;			add.w   R13,R12
+;			mov.w	#0x0002,R13
+;			mov.w	#0x0004,R12
+;			mov.w   R13,&MPY32_MPY			; Load operand 1 into multiplier
+;			mov.w   R12,&MPY32_OP2			; Load operand 2 which triggers MPY
+;			mov.w   &MPY32_RESLO,R12		; Move result into return register
+;			mov.w   #0x0012,R13
+;			mov.w   #0x003,R14
+;			call 	#div
 
 math32bit	mov.w   #0x0075,R14
 			mov.w   #0x00a8,R15
 			mov.w   #0x00e7,R12
 			mov.w   #0x0038,R13
 			add.w   R14,R12
-			addc.w  R15,R13 ; Addition
+			addc.w  R15,R13 				; Addition
 			mov.w   #0x0075,R14
 			mov.w   #0x00a8,R15
 			mov.w   #0x00e7,R12
@@ -132,61 +173,52 @@ math32bit	mov.w   #0x0075,R14
 			mov.w   #0x00e7,R12
 			mov.w   #0x0038,R13
 
-    		cmp 	#1,up_signal     ; Compare with #1 value
-    		jnz 	mainloop      	 ; Repeat loop if not equal
+    		cmp 	#1,up_signal     		; Compare with #1 value
+    		jnz 	mainloop      	 		; Repeat loop if not equal
 			call 	#decode
 			jmp 	mainloop
 
 wait:       mov.w   #50000,R5              	; Delay to R15
-L1          dec.w   R5                     	; Decrement R15
-            jnz     L1                      ; Delay over?
-            ret
+wait_l1     dec.w   R5                     	; Decrement R15
+            jnz     l1                      ; Delay over?
 
-__mspabi_mpyi_f5hw:
-			mov.w   R13,&MPY32_MPY			; Load operand 1 into multiplier
-			mov.w   R12,&MPY32_OP2			; Load operand 2 which triggers MPY
-			mov.w   &MPY32_RESLO,R12		; Move result into return register
-			ret
-
-;------
-; FUNCTION DEF: div
-; DESCRIPTION:  unsigned 32/16 division, R12|R13 / R14 = R15, Remainder
+;---------------------------------------------------------------------
+; Function: 	div
+; Description:  unsigned 32/16 division, R12|R13 / R14 = R15, Remainder
 ; in R12
-; REGISTER USE: R12 is dividend high word
+; Register used:R12 is dividend high word
 ;               R13 is dividend low word
 ;               R14 is divisor
 ;               R15 is result
 ;               R11 is counter
-; CALLS:        -
-; ORIGINATOR:   Metering Application Report
-;------
-div         clr     R15        ;1C
-            clr     R12        ;only 16/16 really
-            mov     #17,R11        ;2C    -4C ENTRY
-div_l1     	cmp     R14,R12        ;1C
-            jlo     div_l2        ;2C
-            sub     R14,R12        ;1C    -4C WORST CASE
-div_l2    	rlc     R15        ;1C
-            jc      div_l4        ;2C
-            dec     R11        ;1C
-            jz      div_l4        ;2C    -6C ON LAST BIT
-            rla     R13        ;1C
-            rlc     R12        ;1C
-            jnc     div_l1        ;2C
-			sub     R14,R12        ;1C
-            setc            ;2C
-            jmp     div_l2        ;2C    -15C WORST
-div_l4	    ret            ;3C
+;----------------------------------------------------------------------
+div         clr     R15        				;1C
+            clr     R12        				;only 16/16 really
+            mov     #17,R11        			;2C    -4C ENTRY
+div_l1     	cmp     R14,R12        			;1C
+            jlo     div_l2        			;2C
+            sub     R14,R12        			;1C    -4C WORST CASE
+div_l2    	rlc     R15        				;1C
+            jc      div_l4        			;2C
+            dec     R11        				;1C
+            jz      div_l4        			;2C    -6C ON LAST BIT
+            rla     R13        				;1C
+            rlc     R12        				;1C
+            jnc     div_l1        			;2C
+			sub     R14,R12        			;1C
+            setc            				;2C
+            jmp     div_l2        			;2C    -15C WORST
+div_l4	    ret            					;3C
 
-;------------------------------------------
+;--------------------------------------------------
 ; Function: 	decode
 ; Description:  decode update instructions
-; Register Use: R10: data start address
+; Register used:R10: data start address
 ;				R9:	 current free address pointer
 ;				R8:  destination address
-;               R7:  length
+;               R7:  update data length
 ;               R6:  backup size
-;------------------------------------------
+;--------------------------------------------------
 ; to do: change op => R9, use a temp register instead.
 ; so R9 can dedicated to address pointer
 decode:		mov.w	#buffer,R10
@@ -194,6 +226,7 @@ decode:		mov.w	#buffer,R10
 			mov.w	0(R10), R9		 		; read op code
    			cmp 	#0,R9     		 		; Compare with value
     		jnz 	decode_mod      	 	; jump if not equal
+    										; insert operation with backup instruction size = 1 tested
 decode_ins	mov.w	2(R10),R8				; destination address
     		mov.w	4(R10),R7				; length
     		mov.w	6(R10),R6				; backup size
@@ -217,26 +250,52 @@ decode_ins2 mov.w	free_addr,R11
 			cmp		#2,R6					; write jump instruction in different location
 			jnz		decode_ins3
 			mov.w	R15,-2(R8)
-			jmp		decode_end
+			jmp		update_ins
 decode_ins3	mov.w	R15,0(R8)
 			;mov.w	#0x3D13,0(R8)			; use precalculate value to test jump
-			jmp		decode_end
+			jmp		update_ins
 decode_mod  cmp 	#1,R9
     		jnz 	decode_del
     		nop
-    		jmp		decode_end
+    		jmp		update_mod
 decode_del  cmp 	#2,R9
     		jnz 	decode_cop
-    		nop
-    		jmp 	decode_end
+    		mov.w	2(R10),R8				; destination address
+    		mov.w	4(R10),R7				; length
+    		mov.w	free_addr,R11
+			sub.w	R8,R11					; calculate offset
+			sub.w	#2,R11
+			mov.w	R11,R13
+			mov.w	#2,R14
+			call 	#div					; R13/R14, result stored in R15
+			add.w	jmp_base,R15			; add jump base value
+			mov.w	R15,R8
+    		jmp 	update_del
 decode_cop  cmp 	#3,R9
     		jnz 	mainloop
-    		nop
-decode_end	call 	#update
-			ret
+    		mov.w	2(R10),R8				; destination address
+    		mov.w	4(R10),R7				; length
+decode_cop1 dec.w   R7                   	; Decrement R7
+			mov.w	0(R10),0(R9)
+			add.w	#2,R10
+			add.w	#2,R9
+			cmp		#0,R7
+	        jnz     decode_cop1             ; Done?
+decode_end	ret
 
+;-------------------------------------------------------------------------
+; Function: 	update
+; Description:  update the program by replacing values stored in memories.
+; Register used:R10: data start address
+;				R9:	 current free address pointer
+;				R8:  destination address
+;               R7:  update data length
+;               R6:  backup size
+;---------------------------------------------------------------------------
 ; current update, if need to replace last 2 instructions, one empty space will be left.
-update:		dec.w   R7                   	; Decrement R7
+update:
+
+update_ins	dec.w   R7                   	; Decrement R7
 			mov.w	0(R10),0(R9)
 			add.w	#2,R10
 			add.w	#2,R9
@@ -252,20 +311,13 @@ update:		dec.w   R7                   	; Decrement R7
 	        mov.w	R15,0(R9)
 	        ;mov.w	#0x3AE9,0(R9)			; Testing jump
 	        add.w	#2,R9
+	        jmp		#cleanup
+update_mod	jmp		#cleanup
+update_del	jmp		#cleanup
+update_copy jmp		#cleanup
 cleanup		mov.w	R9,free_addr
 			mov.b	#0,up_signal
 			ret
-
-math16bit	xor.b   #BIT1,&P1OUT            ; Toggle P1.1 BIT0 Red, BIT1 Green
-;			mov.w	#0x00e7,R13
-;			mov.w	#0x000c,R12
-;			add.w   R13,R12
-;			mov.w	#0x0002,R13
-;			mov.w	#0x0004,R12
-;			call   	#__mspabi_mpyi_f5hw
-;			mov.w   #0x0012,R13
-;			mov.w   #0x003,R14
-;			call 	#div
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
