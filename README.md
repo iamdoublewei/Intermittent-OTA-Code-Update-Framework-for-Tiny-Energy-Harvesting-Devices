@@ -15,6 +15,8 @@ This project implements an innovated framework to achieve intermittent over-the-
 ## Structure
 - ./Diff -  find memory differences between 2 versions of implementation
 - ./MSP430FR5994 - assembly code for energy harvesting IoT device
+- ./Docs - related documentations
+- ./References - reference papers
 
 ## MSP430FR5994 Setup Instruction
 - Create MSP430FR5994 assembly project: CCS -> File -> New -> Project -> CCS Project -> Target MSP430FR5994 -> Empty Assembly-only Project.
