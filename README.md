@@ -11,6 +11,7 @@ This project implements an innovated framework to achieve intermittent over-the-
 - [Code Composer Studio](https://www.ti.com/tool/CCSTUDIO)
 - [CC1101 Communication for MSP430FR5994](https://github.com/abhra0897/msp430_cc1101_energia_v2)
 - [CC1101 Communication for Raspberry Pi](https://github.com/SpaceTeddy/CC1101)
+- [Current CC1101 Library Used](https://github.com/jhester/msp430-cc1101)
 
 ## Structure
 - ./Diff -  find memory differences between 2 versions of implementation
