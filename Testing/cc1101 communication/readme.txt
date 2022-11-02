@@ -1,0 +1,1 @@
+communication based on hardware MSP430FR5994 to MSP430FR5994
