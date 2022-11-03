@@ -3,6 +3,6 @@
 
 #include <msp430.h>
 
-void test(void);
+void blink(void);
 
 #endif

@@ -5,6 +5,6 @@
 ; blink
 ;============================================================================
 		.text
-		.global blink
-blink:
+		.global led
+led:
         xor.b   #BIT0,&P1OUT            ; Toggle P1.0, Red LED

@@ -160,7 +160,7 @@ receiver.hex: $(EXE_OUTPUTS)
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
 	-$(RM) "Blink.obj" "cc1101.obj" "cfile.obj" "main.obj" 
-	-$(RM) "cfile.d" "main.d" 
+	-$(RM) "cfile.d" 
 	-$(RM) "cc1101.d" "main.d" 
 	-$(RM) "Blink.d" 
 	-@echo 'Finished clean'

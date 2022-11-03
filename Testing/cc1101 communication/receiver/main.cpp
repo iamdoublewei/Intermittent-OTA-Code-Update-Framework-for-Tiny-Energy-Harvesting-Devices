@@ -68,15 +68,8 @@ extern "C"{
 #include "cc1101.h"
 #include <string.h>
 
-uint8_t RX_buffer[61]={0};
-volatile uint8_t sizerx,i,flag;
-
-void init_vlo() {
-    CSCTL0_H = 0xA5;
-    CSCTL1 = DCOFSEL_3; // Set to 8MHz DCO clock
-    CSCTL2 = SELA_1 + SELS_3 + SELM_3;        // set ACLK = VLO; MCLK = DCO
-    CSCTL3 = DIVA_0 + DIVS_3 + DIVM_3;        // set all dividers, Div by 8 for 1MHz clock speed
-}
+uint8_t rx_buffer[61]={0};
+volatile uint8_t sizerx, i, flag;
 
 void main(void)
 {
@@ -96,9 +89,8 @@ void main(void)
     Radio.RxOn(); // receive mode active
     while(1) {
         if(Radio.CheckReceiveFlag()) {  // if buffer has contents then flag returns true.
-            //PJOUT ^= BIT0;    // Toggle light LED
-            test();
-            sizerx=Radio.ReceiveData(RX_buffer); // put contents into RX buffer
+            blink();
+            sizerx=Radio.ReceiveData(rx_buffer); // put contents into RX buffer
             Radio.RxOn();
             __no_operation();
         }

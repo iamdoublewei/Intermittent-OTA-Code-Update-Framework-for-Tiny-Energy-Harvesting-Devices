@@ -16,12 +16,10 @@ ASM_SRCS += \
 ../Blink.asm 
 
 C_SRCS += \
-../cfile.c \
-../main.c 
+../cfile.c 
 
 C_DEPS += \
-./cfile.d \
-./main.d 
+./cfile.d 
 
 OBJS += \
 ./Blink.obj \
@@ -43,8 +41,7 @@ OBJS__QUOTED += \
 "main.obj" 
 
 C_DEPS__QUOTED += \
-"cfile.d" \
-"main.d" 
+"cfile.d" 
 
 CPP_DEPS__QUOTED += \
 "cc1101.d" \
@@ -61,7 +58,6 @@ CPP_SRCS__QUOTED += \
 "../main.cpp" 
 
 C_SRCS__QUOTED += \
-"../cfile.c" \
-"../main.c" 
+"../cfile.c" 
 
 
