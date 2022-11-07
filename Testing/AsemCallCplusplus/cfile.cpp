@@ -1,4 +1,4 @@
-#include "cheader.h"
+#include <cheader.h>
 
 // Function Prototypes for asm function
 extern void gpio_config(void);
@@ -29,4 +29,14 @@ void run(void)
 int update()
 {
     return 1;
+}
+
+extern "C" void ctest()
+{
+    while(1)
+    {
+        P1OUT ^= BIT0;                      // Toggle LED
+        P1OUT ^= BIT1;                      // Toggle LED
+        __delay_cycles(100000);
+    }
 }

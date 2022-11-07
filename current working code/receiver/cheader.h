@@ -1,12 +1,15 @@
-#ifndef CHEADER_h
-#define CHEADER_h
+/*
+ * cheader.h
+ *
+ *  Created on: Nov 7, 2022
+ *      Author: iamdo
+ */
 
-#include <msp430.h>
+#ifndef CHEADER_H_
+#define CHEADER_H_
 
-void blink_config(void);
-void blink_red(void);
-void blink_green(void);
-void run(void);
-int update();
+extern "C" void checkUpdate(void);
 
-#endif
+
+
+#endif /* CHEADER_H_ */

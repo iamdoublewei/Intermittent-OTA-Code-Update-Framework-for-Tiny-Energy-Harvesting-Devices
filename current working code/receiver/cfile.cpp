@@ -61,25 +61,16 @@
 //   October 2015
 //   Built with IAR Embedded Workbench V6.30 & Code Composer Studio V6.1
 //******************************************************************************
-extern "C"{
-#include "cheader.h"
-}
 #include <msp430.h>
 #include "cc1101.h"
 #include <string.h>
+#include "cheader.h"
 
 uint8_t rx_buffer[61]={0};
 volatile uint8_t sizerx, i, flag;
 
-void main(void)
+extern "C" void checkUpdate(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;               // Stop WDT
-    PM5CTL0 &= ~LOCKLPM5;                   // Disable the GPIO power-on default high-impedance mode
-                                            // to activate previously configured port settings
-
-    // Configure GPIO
-    blink_config();
-
     delay(1); // waits 1000 cycles
     Radio.Init(); // start radio (entirely resets radio)
     Radio.SetDataRate(5); // Needs to be the same in Tx and Rx
@@ -87,9 +78,9 @@ void main(void)
 
     Radio.RxOn(); // receive mode active
     while(1) {
-        run();
         if(Radio.CheckReceiveFlag()) {  // if buffer has contents then flag returns true.
-            blink_red();
+            P1OUT ^= BIT0;                      // Toggle LED
+            P1OUT ^= BIT1;                      // Toggle LED
             sizerx=Radio.ReceiveData(rx_buffer); // put contents into RX buffer
             Radio.RxOn();
             __no_operation();
