@@ -8,8 +8,9 @@
 #ifndef CHEADER_H_
 #define CHEADER_H_
 
-extern "C" void checkUpdate(void);
 
+//extern "C" uint16_t getRxBufferAddress(void);
+extern "C" void checkUpdate(uint16_t);
 
 
 #endif /* CHEADER_H_ */

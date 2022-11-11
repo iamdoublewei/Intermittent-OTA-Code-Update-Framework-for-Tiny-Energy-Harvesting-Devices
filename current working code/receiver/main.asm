@@ -23,15 +23,14 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 ;-------------------------------------------------------------------------------
 ; Main loop here
 ;-------------------------------------------------------------------------------
-			.global checkUpdate
-	     	.bss 	buffer,60	         	; Allocate 60 bytes (30 words) in FRAM for
-											; decoded update instructions
-			.bss	index,2					; Index for round-robin buffer
  			.data
 up_signal	.byte   0x0001
-free_addr	.word	0x4300	 				; Pointer for the start of allocated update memory
+buffer:		.word	0x0000	 				; Pointer for the start of allocated update memory
+free_addr	.word	0x4800	 				; Pointer for the start of allocated update memory
 jmp_base	.word	0x3C00					; The base value (exclude offset) of unconditional jump
 			.text
+			.global getRxBufferAddress
+			.global checkUpdate
 _main
 SetupP1     bic.b   #BIT0,&P1OUT            ; Clear P1.0 output latch for a defined power-on state
             bis.b   #BIT0,&P1DIR            ; Set P1.0 to output direction
@@ -51,43 +50,12 @@ MPY32_OP2H	.equ	0x04E2
 MPY32_RES0	.equ	0x04E4
 MPY32_RES1	.equ	0x04E6
 
-;-------------------------------------------------------------------------------
-; Intialize update buffer
-; Assume update package received in the buffer
-;-------------------------------------------------------------------------------
-init		mov.w	#0x000A,index
-			mov.w	#0xFFFF,buffer
-			mov.w	#0xFFFF,buffer+2
-			mov.w	#0xFFFF,buffer+4
-			mov.w	#0xFFFF,buffer+6
-			mov.w	#0xFFFF,buffer+8
-			mov.w	#0x0000,buffer+10		; op code
-			mov.w	#0x40D8,buffer+12		; destination
-			mov.w	#0x0002,buffer+14		; length (in words)
-			mov.w	#0x0001,buffer+16		; backup instruction size
-			mov.w	#0xE3E2,buffer+18		; data
-			mov.w	#0x0202,buffer+20
-			mov.w	#0x403D,buffer+22
-			mov.w	#0x00E7,buffer+24
-			mov.w	#0x403C,buffer+26
-			mov.w	#0x000C,buffer+28
-			mov.w	#0x5D0C,buffer+30
-			mov.w	#0x432D,buffer+32
-			mov.w	#0x422C,buffer+34
-			mov.w	#0x12B0,buffer+36
-			mov.w	#0x40F6,buffer+38
-			mov.w	#0x403D,buffer+40
-			mov.w	#0x0012,buffer+42
-			mov.w	#0x403E,buffer+44
-			mov.w	#0x0003,buffer+46
-			mov.w	#0x12B0,buffer+48
-			mov.w	#0x410E,buffer+50
-			mov.w	#0xFFFF,buffer+52
-			mov.w	#0xFFFF,buffer+54
-			mov.w	#0xFFFF,buffer+56
-			mov.w	#0xFFFF,buffer+58
+_init
+;			call 	#getRxBufferAddress		; return value stored in R12
+;			mov.w 	#0x0002,0(R12)
+;			mov.w	R12,buffer
+			mov.w	#0x000A,buffer
 
-			.global checkUpdate
 
 mainloop
 ;-------------------------------------------------------------------------------
@@ -152,6 +120,7 @@ math32bit	mov.w   #0x0075,R14
 ;    		cmp 	#1,up_signal     		; Compare with #1 value
 ;    		jnz 	mainloop      	 		; Repeat loop if not equal
 ;			call 	#decode
+			mov.w	#0x0003,R12
 			call 	#checkUpdate
 			jmp 	mainloop
 

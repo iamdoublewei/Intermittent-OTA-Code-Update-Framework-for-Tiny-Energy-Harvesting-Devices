@@ -69,8 +69,20 @@
 uint8_t rx_buffer[61]={0};
 volatile uint8_t sizerx, i, flag;
 
-extern "C" void checkUpdate(void)
+//extern "C" uint16_t getRxBufferAddress(void)
+//{
+//    return uint16_t(rx_buffer);
+//}
+
+extern "C" void checkUpdate(uint16_t temp)
 {
+    _no_operation();
+    while (temp > 0)
+    {
+        P1OUT ^= BIT0;                      // Toggle LED
+        __delay_cycles(100000);
+        temp -= 1;
+    }
     delay(1); // waits 1000 cycles
     Radio.Init(); // start radio (entirely resets radio)
     Radio.SetDataRate(5); // Needs to be the same in Tx and Rx
