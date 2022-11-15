@@ -8,6 +8,10 @@
 #ifndef CHEADER_H_
 #define CHEADER_H_
 
+extern uint8_t rx_buffer[61]={0};
+extern "C" {
+    volatile uint8_t sizerx;
+}
 
 extern "C" void initComm(void);
 extern "C" void checkUpdate(void);

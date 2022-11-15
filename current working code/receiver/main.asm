@@ -29,6 +29,8 @@ buffer:		.word	0x0000	 				; Pointer for the start of allocated update memory
 free_addr	.word	0x4800	 				; Pointer for the start of allocated update memory
 jmp_base	.word	0x3C00					; The base value (exclude offset) of unconditional jump
 			.text
+			.global rx_buffer
+			.global sizerx
 			.global initComm
 			.global checkUpdate
 _main
@@ -116,8 +118,9 @@ math32bit	mov.w   #0x0075,R14
 ;    		cmp 	#1,up_signal     		; Compare with #1 value
 ;    		jnz 	mainloop      	 		; Repeat loop if not equal
 ;			call 	#decode
-			mov.w	#0x0003,R12
 			call 	#checkUpdate
+			mov.w	rx_buffer,R12
+			mov.b	sizerx,R13
 			jmp 	mainloop
 
 wait:       mov.w   #50000,R5              	; Delay to R15

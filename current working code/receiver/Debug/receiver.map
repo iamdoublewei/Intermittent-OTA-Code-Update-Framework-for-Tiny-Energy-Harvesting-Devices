@@ -1,7 +1,7 @@
 ******************************************************************************
                   MSP430 Linker PC v21.6.1                     
 ******************************************************************************
->> Linked Tue Nov 15 14:54:35 2022
+>> Linked Tue Nov 15 15:37:09 2022
 
 OUTPUT FILE NAME:   <receiver.out>
 ENTRY POINT SYMBOL: "RESET"  address: 0000418e
@@ -20,7 +20,7 @@ MEMORY CONFIGURATION
   RAM                   00001c00   00001000  0000004d  00000fb3  RWIX
   LEARAM                00002c00   00000ec8  00000000  00000ec8  RWIX
   LEASTACK              00003ac8   00000138  00000000  00000138  RWIX
-  FRAM                  00004000   0000bf80  000005c7  0000b9b9  RWIX
+  FRAM                  00004000   0000bf80  000005cb  0000b9b5  RWIX
   JTAGSIGNATURE         0000ff80   00000004  00000004  00000000  RWIX  ffff 
   BSLSIGNATURE          0000ff84   00000004  00000004  00000000  RWIX  ffff 
   IPESIGNATURE          0000ff88   00000008  00000008  00000000  RWIX  ffff 
@@ -113,41 +113,41 @@ section   page    origin      length       input sections
 .init_array 
 *          0    00004000    00000000     UNINITIALIZED
 
-.text      0    00004000    0000058e     
+.text      0    00004000    00000592     
                   00004000    0000018e     cc1101.obj (.text:_ZN11CC1101Radio17RegConfigSettingsEv)
-                  0000418e    000000be     main.obj (.text)
-                  0000424c    00000058     cc1101.obj (.text:_ZN11CC1101Radio11ReceiveDataEPh)
-                  000042a4    00000046     cc1101.obj (.text:_ZN11CC1101Radio5ResetEv)
-                  000042ea    0000003e     cfile.obj (.text:checkUpdate)
-                  00004328    0000003c     cc1101.obj (.text:_ZN11CC1101Radio7SpiInitEv)
-                  00004364    00000038     cfile.obj (.text:initComm)
-                  0000439c    00000034     cc1101.obj (.text:_ZN11CC1101Radio11SetDataRateEh)
-                  000043d0    00000034     cc1101.obj (.text:_ZN11CC1101Radio15SpiReadBurstRegEhPhh)
-                  00004404    00000034     cc1101.obj (.text:_ZN11CC1101Radio16SpiWriteBurstRegEhPhh)
-                  00004438    00000028     cc1101.obj (.text:_ZN11CC1101Radio17SetLogicalChannelEh)
-                  00004460    00000024     cc1101.obj (.text:_ZN11CC1101Radio4InitEv)
-                  00004484    00000022     cc1101.obj (.text:_ZN11CC1101Radio10SpiReadRegEh)
-                  000044a6    00000022     cc1101.obj (.text:_ZN11CC1101Radio13SpiReadStatusEh)
-                  000044c8    00000022     cc1101.obj (.text:_ZN11CC1101Radio16SpiReadStatusRegEh)
-                  000044ea    00000020     cc1101.obj (.text:_ZN11CC1101Radio9RxModeOffEv)
-                  0000450a    0000001a     cc1101.obj (.text:_ZN11CC1101Radio11SpiWriteRegEhh)
-                  00004524    00000018     cc1101.obj (.text:_ZN11CC1101Radio11SpiTransferEh)
-                  0000453c    00000014     cc1101.obj (.text:_ZN11CC1101Radio16CheckReceiveFlagEv)
-                  00004550    00000014     cc1101.obj (.text:_ZN11CC1101Radio9SpiStrobeEh)
-                  00004564    00000010     cc1101.obj (.text:_ZN11CC1101Radio12GetMARCStateEv)
-                  00004574    00000010     cc1101.obj (.text:_ZN11CC1101Radio4RxOnEv)
-                  00004584    0000000a     cc1101.obj (.text:_ZN11CC1101Radio7GDO_SetEv)
+                  0000418e    000000c2     main.obj (.text)
+                  00004250    00000058     cc1101.obj (.text:_ZN11CC1101Radio11ReceiveDataEPh)
+                  000042a8    00000046     cc1101.obj (.text:_ZN11CC1101Radio5ResetEv)
+                  000042ee    0000003e     cfile.obj (.text:checkUpdate)
+                  0000432c    0000003c     cc1101.obj (.text:_ZN11CC1101Radio7SpiInitEv)
+                  00004368    00000038     cfile.obj (.text:initComm)
+                  000043a0    00000034     cc1101.obj (.text:_ZN11CC1101Radio11SetDataRateEh)
+                  000043d4    00000034     cc1101.obj (.text:_ZN11CC1101Radio15SpiReadBurstRegEhPhh)
+                  00004408    00000034     cc1101.obj (.text:_ZN11CC1101Radio16SpiWriteBurstRegEhPhh)
+                  0000443c    00000028     cc1101.obj (.text:_ZN11CC1101Radio17SetLogicalChannelEh)
+                  00004464    00000024     cc1101.obj (.text:_ZN11CC1101Radio4InitEv)
+                  00004488    00000022     cc1101.obj (.text:_ZN11CC1101Radio10SpiReadRegEh)
+                  000044aa    00000022     cc1101.obj (.text:_ZN11CC1101Radio13SpiReadStatusEh)
+                  000044cc    00000022     cc1101.obj (.text:_ZN11CC1101Radio16SpiReadStatusRegEh)
+                  000044ee    00000020     cc1101.obj (.text:_ZN11CC1101Radio9RxModeOffEv)
+                  0000450e    0000001a     cc1101.obj (.text:_ZN11CC1101Radio11SpiWriteRegEhh)
+                  00004528    00000018     cc1101.obj (.text:_ZN11CC1101Radio11SpiTransferEh)
+                  00004540    00000014     cc1101.obj (.text:_ZN11CC1101Radio16CheckReceiveFlagEv)
+                  00004554    00000014     cc1101.obj (.text:_ZN11CC1101Radio9SpiStrobeEh)
+                  00004568    00000010     cc1101.obj (.text:_ZN11CC1101Radio12GetMARCStateEv)
+                  00004578    00000010     cc1101.obj (.text:_ZN11CC1101Radio4RxOnEv)
+                  00004588    0000000a     cc1101.obj (.text:_ZN11CC1101Radio7GDO_SetEv)
 
-.const     0    0000458e    00000031     
-                  0000458e    00000019     cc1101.obj (.const:.string:mrfiLogicalChanTable)
-                  000045a7    00000001     --HOLE-- [fill = 0]
-                  000045a8    0000000b     cc1101.obj (.const:.string:rate_MDMCFG3)
-                  000045b3    00000001     --HOLE-- [fill = 0]
-                  000045b4    0000000b     cc1101.obj (.const:.string:rate_MDMCFG4)
+.const     0    00004592    00000031     
+                  00004592    00000019     cc1101.obj (.const:.string:mrfiLogicalChanTable)
+                  000045ab    00000001     --HOLE-- [fill = 0]
+                  000045ac    0000000b     cc1101.obj (.const:.string:rate_MDMCFG3)
+                  000045b7    00000001     --HOLE-- [fill = 0]
+                  000045b8    0000000b     cc1101.obj (.const:.string:rate_MDMCFG4)
 
 .text:_isr 
-*          0    000045c0    00000008     
-                  000045c0    00000008     rts430x_sc_sd_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
+*          0    000045c4    00000008     
+                  000045c4    00000008     rts430x_sc_sd_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
 
 .data      0    00001c00    0000004a     
                   00001c00    0000003d     cfile.obj (.data:rx_buffer)
@@ -303,10 +303,10 @@ MODULE SUMMARY
        ------             ----   -------   -------
     .\
        cc1101.obj         1114   47        13     
-       main.obj           190    2         0      
+       main.obj           194    2         0      
        cfile.obj          118    0         63     
     +--+------------------+------+---------+---------+
-       Total:             1422   49        76     
+       Total:             1426   49        76     
                                                   
     C:\ti\ccs1120\ccs\tools\compiler\ti-cgt-msp430_21.6.1.LTS\lib\rts430x_sc_sd_eabi.lib
        isr_trap.asm.obj   8      0         0      
@@ -351,7 +351,7 @@ MODULE SUMMARY
        Total:             8      74        0      
                                                   
     +--+------------------+------+---------+---------+
-       Grand Total:       1430   123       76     
+       Grand Total:       1434   123       76     
 
 
 GLOBAL SYMBOLS: SORTED ALPHABETICALLY BY Name 
@@ -1903,29 +1903,29 @@ address   name
 0000015c  WDTCTL                                 
 0000015d  WDTCTL_H                               
 0000015c  WDTCTL_L                               
-00004484  _ZN11CC1101Radio10SpiReadRegEh         
-0000424c  _ZN11CC1101Radio11ReceiveDataEPh       
-0000439c  _ZN11CC1101Radio11SetDataRateEh        
-00004524  _ZN11CC1101Radio11SpiTransferEh        
-0000450a  _ZN11CC1101Radio11SpiWriteRegEhh       
-00004564  _ZN11CC1101Radio12GetMARCStateEv       
-000044a6  _ZN11CC1101Radio13SpiReadStatusEh      
-000043d0  _ZN11CC1101Radio15SpiReadBurstRegEhPhh 
-0000453c  _ZN11CC1101Radio16CheckReceiveFlagEv   
-000044c8  _ZN11CC1101Radio16SpiReadStatusRegEh   
-00004404  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
+00004488  _ZN11CC1101Radio10SpiReadRegEh         
+00004250  _ZN11CC1101Radio11ReceiveDataEPh       
+000043a0  _ZN11CC1101Radio11SetDataRateEh        
+00004528  _ZN11CC1101Radio11SpiTransferEh        
+0000450e  _ZN11CC1101Radio11SpiWriteRegEhh       
+00004568  _ZN11CC1101Radio12GetMARCStateEv       
+000044aa  _ZN11CC1101Radio13SpiReadStatusEh      
+000043d4  _ZN11CC1101Radio15SpiReadBurstRegEhPhh 
+00004540  _ZN11CC1101Radio16CheckReceiveFlagEv   
+000044cc  _ZN11CC1101Radio16SpiReadStatusRegEh   
+00004408  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
 00004000  _ZN11CC1101Radio17RegConfigSettingsEv  
-00004438  _ZN11CC1101Radio17SetLogicalChannelEh  
-00004460  _ZN11CC1101Radio4InitEv                
-00004574  _ZN11CC1101Radio4RxOnEv                
-000042a4  _ZN11CC1101Radio5ResetEv               
-00004584  _ZN11CC1101Radio7GDO_SetEv             
-00004328  _ZN11CC1101Radio7SpiInitEv             
-000044ea  _ZN11CC1101Radio9RxModeOffEv           
-00004550  _ZN11CC1101Radio9SpiStrobeEh           
+0000443c  _ZN11CC1101Radio17SetLogicalChannelEh  
+00004464  _ZN11CC1101Radio4InitEv                
+00004578  _ZN11CC1101Radio4RxOnEv                
+000042a8  _ZN11CC1101Radio5ResetEv               
+00004588  _ZN11CC1101Radio7GDO_SetEv             
+0000432c  _ZN11CC1101Radio7SpiInitEv             
+000044ee  _ZN11CC1101Radio9RxModeOffEv           
+00004554  _ZN11CC1101Radio9SpiStrobeEh           
 00002c00  __STACK_END                            
 00000000  __STACK_SIZE                           
-000045c0  __TI_ISR_TRAP                          
+000045c4  __TI_ISR_TRAP                          
 0000ffb4  __TI_int18                             
 0000ffb6  __TI_int19                             
 0000ffb8  __TI_int20                             
@@ -1968,14 +1968,14 @@ ffffffff  __TI_prof_data_size
 ffffffff  __TI_prof_data_start                   
 ffffffff  __c_args__                             
 00000001  __mpu_enable                           
-000042ea  checkUpdate                            
+000042ee  checkUpdate                            
 00001c48  dataRateNdx                            
 00001c4b  flag                                   
 00004000  fram_ipe_end                           
 00004000  fram_ipe_start                         
 00004000  fram_rw_start                          
 00004000  fram_rx_start                          
-00004364  initComm                               
+00004368  initComm                               
 0000a501  mpu_ctl0_value                         
 00001513  mpu_sam_value                          
 00000400  mpu_segment_border1                    
@@ -3554,28 +3554,28 @@ address   name
 00004000  fram_rw_start                          
 00004000  fram_rx_start                          
 0000418e  RESET                                  
-0000424c  _ZN11CC1101Radio11ReceiveDataEPh       
-000042a4  _ZN11CC1101Radio5ResetEv               
-000042ea  checkUpdate                            
-00004328  _ZN11CC1101Radio7SpiInitEv             
-00004364  initComm                               
-0000439c  _ZN11CC1101Radio11SetDataRateEh        
-000043d0  _ZN11CC1101Radio15SpiReadBurstRegEhPhh 
-00004404  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
-00004438  _ZN11CC1101Radio17SetLogicalChannelEh  
-00004460  _ZN11CC1101Radio4InitEv                
-00004484  _ZN11CC1101Radio10SpiReadRegEh         
-000044a6  _ZN11CC1101Radio13SpiReadStatusEh      
-000044c8  _ZN11CC1101Radio16SpiReadStatusRegEh   
-000044ea  _ZN11CC1101Radio9RxModeOffEv           
-0000450a  _ZN11CC1101Radio11SpiWriteRegEhh       
-00004524  _ZN11CC1101Radio11SpiTransferEh        
-0000453c  _ZN11CC1101Radio16CheckReceiveFlagEv   
-00004550  _ZN11CC1101Radio9SpiStrobeEh           
-00004564  _ZN11CC1101Radio12GetMARCStateEv       
-00004574  _ZN11CC1101Radio4RxOnEv                
-00004584  _ZN11CC1101Radio7GDO_SetEv             
-000045c0  __TI_ISR_TRAP                          
+00004250  _ZN11CC1101Radio11ReceiveDataEPh       
+000042a8  _ZN11CC1101Radio5ResetEv               
+000042ee  checkUpdate                            
+0000432c  _ZN11CC1101Radio7SpiInitEv             
+00004368  initComm                               
+000043a0  _ZN11CC1101Radio11SetDataRateEh        
+000043d4  _ZN11CC1101Radio15SpiReadBurstRegEhPhh 
+00004408  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
+0000443c  _ZN11CC1101Radio17SetLogicalChannelEh  
+00004464  _ZN11CC1101Radio4InitEv                
+00004488  _ZN11CC1101Radio10SpiReadRegEh         
+000044aa  _ZN11CC1101Radio13SpiReadStatusEh      
+000044cc  _ZN11CC1101Radio16SpiReadStatusRegEh   
+000044ee  _ZN11CC1101Radio9RxModeOffEv           
+0000450e  _ZN11CC1101Radio11SpiWriteRegEhh       
+00004528  _ZN11CC1101Radio11SpiTransferEh        
+00004540  _ZN11CC1101Radio16CheckReceiveFlagEv   
+00004554  _ZN11CC1101Radio9SpiStrobeEh           
+00004568  _ZN11CC1101Radio12GetMARCStateEv       
+00004578  _ZN11CC1101Radio4RxOnEv                
+00004588  _ZN11CC1101Radio7GDO_SetEv             
+000045c4  __TI_ISR_TRAP                          
 0000a501  mpu_ctl0_value                         
 0000ffb4  __TI_int18                             
 0000ffb6  __TI_int19                             

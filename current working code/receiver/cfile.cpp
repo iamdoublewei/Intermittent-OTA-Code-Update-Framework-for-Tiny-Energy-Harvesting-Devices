@@ -66,8 +66,7 @@
 #include <string.h>
 #include "cheader.h"
 
-uint8_t rx_buffer[61]={0};
-volatile uint8_t sizerx, i, flag;
+volatile uint8_t flag;
 
 extern "C" void initComm(void)
 {
