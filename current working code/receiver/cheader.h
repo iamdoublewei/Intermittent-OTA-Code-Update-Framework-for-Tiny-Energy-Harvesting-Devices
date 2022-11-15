@@ -9,8 +9,8 @@
 #define CHEADER_H_
 
 
-//extern "C" uint16_t getRxBufferAddress(void);
-extern "C" void checkUpdate(uint16_t);
+extern "C" void initComm(void);
+extern "C" void checkUpdate(void);
 
 
 #endif /* CHEADER_H_ */

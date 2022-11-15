@@ -29,7 +29,7 @@ buffer:		.word	0x0000	 				; Pointer for the start of allocated update memory
 free_addr	.word	0x4800	 				; Pointer for the start of allocated update memory
 jmp_base	.word	0x3C00					; The base value (exclude offset) of unconditional jump
 			.text
-			.global getRxBufferAddress
+			.global initComm
 			.global checkUpdate
 _main
 SetupP1     bic.b   #BIT0,&P1OUT            ; Clear P1.0 output latch for a defined power-on state
@@ -51,11 +51,7 @@ MPY32_RES0	.equ	0x04E4
 MPY32_RES1	.equ	0x04E6
 
 _init
-;			call 	#getRxBufferAddress		; return value stored in R12
-;			mov.w 	#0x0002,0(R12)
-;			mov.w	R12,buffer
-			mov.w	#0x000A,buffer
-
+			call 	#initComm
 
 mainloop
 ;-------------------------------------------------------------------------------
