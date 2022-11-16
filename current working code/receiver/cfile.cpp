@@ -68,7 +68,7 @@
 
 volatile uint8_t flag;
 
-extern "C" void initComm(void)
+extern "C" void init(void)
 {
     delay(1); // waits 1000 cycles
     Radio.Init(); // start radio (entirely resets radio)
@@ -78,15 +78,21 @@ extern "C" void initComm(void)
     Radio.RxOn(); // receive mode active
 }
 
-extern "C" void checkUpdate(void)
+extern "C" void check_update(void)
 {
     if(Radio.CheckReceiveFlag()) {  // if buffer has contents then flag returns true.
-        P1OUT ^= BIT0;                      // Toggle LED
-        P1OUT ^= BIT1;                      // Toggle LED
+        blink();
         sizerx=Radio.ReceiveData(rx_buffer); // put contents into RX buffer
+        update_avail = 1;
         Radio.RxOn();
         __no_operation();
     }
     flag = Radio.GetMARCState();
     __no_operation();
+}
+
+void blink(void)
+{
+    P1OUT ^= BIT0;                      // Toggle LED
+    P1OUT ^= BIT1;                      // Toggle LED
 }
