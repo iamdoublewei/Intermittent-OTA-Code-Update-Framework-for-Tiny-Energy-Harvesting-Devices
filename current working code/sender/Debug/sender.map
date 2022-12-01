@@ -1,7 +1,7 @@
 ******************************************************************************
                   MSP430 Linker PC v21.6.1                     
 ******************************************************************************
->> Linked Wed Nov 16 15:45:50 2022
+>> Linked Wed Nov 30 14:22:28 2022
 
 OUTPUT FILE NAME:   <sender.out>
 ENTRY POINT SYMBOL: "_c_int00_noargs_mpu"  address: 00004000
@@ -80,7 +80,7 @@ MEMORY CONFIGURATION
   INT53                 0000fffa   00000002  00000002  00000000  RWIX
   INT54                 0000fffc   00000002  00000002  00000000  RWIX
   RESET                 0000fffe   00000002  00000002  00000000  RWIX
-  FRAM2                 00010000   00033ff8  000005ca  00033a2e  RWIX
+  FRAM2                 00010000   00033ff8  00000600  000339f8  RWIX
 
 
 SECTION ALLOCATION MAP
@@ -280,34 +280,34 @@ SYSNMI     0    0000fffc    00000002
                   00004059    00000001     --HOLE-- [fill = 0]
                   0000405a    00000008     cc1101.obj (.const:.string:rfPowerTable)
 
-.text      0    00010000    000005ca     
+.text      0    00010000    00000600     
                   00010000    00000192     cc1101.obj (.text:_ZN11CC1101Radio17RegConfigSettingsEv)
-                  00010192    000000b0     main.obj (.text:main)
-                  00010242    00000076     rts430x_lc_rd_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
-                  000102b8    00000054                            : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit_hold_wdt:__TI_auto_init_nobinit_nopinit_hold_wdt)
-                  0001030c    00000046     cc1101.obj (.text:_ZN11CC1101Radio5ResetEv)
-                  00010352    0000003e     cc1101.obj (.text:_ZN11CC1101Radio10SetTxPowerEh)
-                  00010390    0000003c     cc1101.obj (.text:_ZN11CC1101Radio7SpiInitEv)
-                  000103cc    00000038     cc1101.obj (.text:_ZN11CC1101Radio11SetDataRateEh)
-                  00010404    00000034     cc1101.obj (.text:_ZN11CC1101Radio16SpiWriteBurstRegEhPhh)
-                  00010438    00000034     cc1101.obj (.text:_ZN11CC1101Radio8SendDataEPhh)
-                  0001046c    0000002c     MSPMPU_INIT_LIB_CCS_msp430_large_code_restricted_data.lib : mpu_init.o (.text:__mpu_init)
-                  00010498    0000002a     cc1101.obj (.text:_ZN11CC1101Radio17SetLogicalChannelEh)
-                  000104c2    00000024     cc1101.obj (.text:_ZN11CC1101Radio4InitEv)
-                  000104e6    00000024     rts430x_lc_rd_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset:__TI_zero_init_nomemset)
-                  0001050a    00000020     cc1101.obj (.text:_ZN11CC1101Radio9RxModeOffEv)
-                  0001052a    0000001a     cc1101.obj (.text:_ZN11CC1101Radio11SpiWriteRegEhh)
-                  00010544    00000018     cc1101.obj (.text:_ZN11CC1101Radio11SpiTransferEh)
-                  0001055c    00000014     cc1101.obj (.text:_ZN11CC1101Radio9SpiStrobeEh)
-                  00010570    00000014     rts430x_lc_rd_eabi.lib : memcpy.c.obj (.text:memcpy)
-                  00010584    00000012                            : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
-                  00010596    00000010     cc1101.obj (.text:_ZN11CC1101Radio4RxOnEv)
-                  000105a6    0000000a     cc1101.obj (.text:_ZN11CC1101Radio4IdleEv)
-                  000105b0    0000000a     cc1101.obj (.text:_ZN11CC1101Radio7GDO_SetEv)
-                  000105ba    00000006     rts430x_lc_rd_eabi.lib : exit.c.obj (.text:abort)
-                  000105c0    00000004     Blink.obj (.text)
-                  000105c4    00000004     rts430x_lc_rd_eabi.lib : pre_init.c.obj (.text:_system_pre_init)
-                  000105c8    00000002                            : startup.c.obj (.text:_system_post_cinit)
+                  00010192    000000e6     main.obj (.text:main)
+                  00010278    00000076     rts430x_lc_rd_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
+                  000102ee    00000054                            : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit_hold_wdt:__TI_auto_init_nobinit_nopinit_hold_wdt)
+                  00010342    00000046     cc1101.obj (.text:_ZN11CC1101Radio5ResetEv)
+                  00010388    0000003e     cc1101.obj (.text:_ZN11CC1101Radio10SetTxPowerEh)
+                  000103c6    0000003c     cc1101.obj (.text:_ZN11CC1101Radio7SpiInitEv)
+                  00010402    00000038     cc1101.obj (.text:_ZN11CC1101Radio11SetDataRateEh)
+                  0001043a    00000034     cc1101.obj (.text:_ZN11CC1101Radio16SpiWriteBurstRegEhPhh)
+                  0001046e    00000034     cc1101.obj (.text:_ZN11CC1101Radio8SendDataEPhh)
+                  000104a2    0000002c     MSPMPU_INIT_LIB_CCS_msp430_large_code_restricted_data.lib : mpu_init.o (.text:__mpu_init)
+                  000104ce    0000002a     cc1101.obj (.text:_ZN11CC1101Radio17SetLogicalChannelEh)
+                  000104f8    00000024     cc1101.obj (.text:_ZN11CC1101Radio4InitEv)
+                  0001051c    00000024     rts430x_lc_rd_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset:__TI_zero_init_nomemset)
+                  00010540    00000020     cc1101.obj (.text:_ZN11CC1101Radio9RxModeOffEv)
+                  00010560    0000001a     cc1101.obj (.text:_ZN11CC1101Radio11SpiWriteRegEhh)
+                  0001057a    00000018     cc1101.obj (.text:_ZN11CC1101Radio11SpiTransferEh)
+                  00010592    00000014     cc1101.obj (.text:_ZN11CC1101Radio9SpiStrobeEh)
+                  000105a6    00000014     rts430x_lc_rd_eabi.lib : memcpy.c.obj (.text:memcpy)
+                  000105ba    00000012                            : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
+                  000105cc    00000010     cc1101.obj (.text:_ZN11CC1101Radio4RxOnEv)
+                  000105dc    0000000a     cc1101.obj (.text:_ZN11CC1101Radio4IdleEv)
+                  000105e6    0000000a     cc1101.obj (.text:_ZN11CC1101Radio7GDO_SetEv)
+                  000105f0    00000006     rts430x_lc_rd_eabi.lib : exit.c.obj (.text:abort)
+                  000105f6    00000004     Blink.obj (.text)
+                  000105fa    00000004     rts430x_lc_rd_eabi.lib : pre_init.c.obj (.text:_system_pre_init)
+                  000105fe    00000002                            : startup.c.obj (.text:_system_post_cinit)
 
 MODULE SUMMARY
 
@@ -315,10 +315,10 @@ MODULE SUMMARY
        ------                       ----   -------   -------
     .\
        cc1101.obj                   970    55        13     
-       main.obj                     176    0         62     
+       main.obj                     230    0         62     
        Blink.obj                    4      0         0      
     +--+----------------------------+------+---------+---------+
-       Total:                       1150   55        75     
+       Total:                       1204   55        75     
                                                             
     C:\ti\ccs1110\ccs\ccs_base\msp430\lib\FR59xx\MSPMPU_INIT_LIB_CCS_msp430_large_code_restricted_data.lib
        mpu_init.o                   44     0         0      
@@ -379,7 +379,7 @@ MODULE SUMMARY
        Stack:                       0      0         160    
        Linker Generated:            0      50        0      
     +--+----------------------------+------+---------+---------+
-       Grand Total:                 1522   181       235    
+       Grand Total:                 1576   181       235    
 
 
 LINKER GENERATED COPY TABLES
@@ -662,7 +662,7 @@ address   name
 000004bc  BIN2BCD                                
 000004bd  BIN2BCD_H                              
 000004bc  BIN2BCD_L                              
-000105ba  C$$EXIT                                
+000105f0  C$$EXIT                                
 0000043e  CAPTIO0CTL                             
 0000043f  CAPTIO0CTL_H                           
 0000043e  CAPTIO0CTL_L                           
@@ -1946,22 +1946,22 @@ address   name
 0000015c  WDTCTL                                 
 0000015d  WDTCTL_H                               
 0000015c  WDTCTL_L                               
-00010352  _ZN11CC1101Radio10SetTxPowerEh         
-000103cc  _ZN11CC1101Radio11SetDataRateEh        
-00010544  _ZN11CC1101Radio11SpiTransferEh        
-0001052a  _ZN11CC1101Radio11SpiWriteRegEhh       
-00010404  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
+00010388  _ZN11CC1101Radio10SetTxPowerEh         
+00010402  _ZN11CC1101Radio11SetDataRateEh        
+0001057a  _ZN11CC1101Radio11SpiTransferEh        
+00010560  _ZN11CC1101Radio11SpiWriteRegEhh       
+0001043a  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
 00010000  _ZN11CC1101Radio17RegConfigSettingsEv  
-00010498  _ZN11CC1101Radio17SetLogicalChannelEh  
-000105a6  _ZN11CC1101Radio4IdleEv                
-000104c2  _ZN11CC1101Radio4InitEv                
-00010596  _ZN11CC1101Radio4RxOnEv                
-0001030c  _ZN11CC1101Radio5ResetEv               
-000105b0  _ZN11CC1101Radio7GDO_SetEv             
-00010390  _ZN11CC1101Radio7SpiInitEv             
-00010438  _ZN11CC1101Radio8SendDataEPhh          
-0001050a  _ZN11CC1101Radio9RxModeOffEv           
-0001055c  _ZN11CC1101Radio9SpiStrobeEh           
+000104ce  _ZN11CC1101Radio17SetLogicalChannelEh  
+000105dc  _ZN11CC1101Radio4IdleEv                
+000104f8  _ZN11CC1101Radio4InitEv                
+000105cc  _ZN11CC1101Radio4RxOnEv                
+00010342  _ZN11CC1101Radio5ResetEv               
+000105e6  _ZN11CC1101Radio7GDO_SetEv             
+000103c6  _ZN11CC1101Radio7SpiInitEv             
+0001046e  _ZN11CC1101Radio8SendDataEPhh          
+00010540  _ZN11CC1101Radio9RxModeOffEv           
+00010592  _ZN11CC1101Radio9SpiStrobeEh           
 00002c00  __STACK_END                            
 000000a0  __STACK_SIZE                           
 00004084  __TI_CINIT_Base                        
@@ -1970,9 +1970,9 @@ address   name
 00004072  __TI_Handler_Table_Base                
 0000407e  __TI_Handler_Table_Limit               
 00004020  __TI_ISR_TRAP                          
-000102b8  __TI_auto_init_nobinit_nopinit_hold_wdt
-00010242  __TI_decompress_lzss                   
-00010584  __TI_decompress_none                   
+000102ee  __TI_auto_init_nobinit_nopinit_hold_wdt
+00010278  __TI_decompress_lzss                   
+000105ba  __TI_decompress_none                   
 0000ffb4  __TI_int18                             
 0000ffb6  __TI_int19                             
 0000ffb8  __TI_int20                             
@@ -2013,24 +2013,24 @@ address   name
 ffffffff  __TI_pprof_out_hndl                    
 ffffffff  __TI_prof_data_size                    
 ffffffff  __TI_prof_data_start                   
-000104e6  __TI_zero_init_nomemset                
+0001051c  __TI_zero_init_nomemset                
 ffffffff  __c_args__                             
 00000001  __mpu_enable                           
-0001046c  __mpu_init                             
+000104a2  __mpu_init                             
 00004000  _c_int00_noargs_mpu                    
 0000fffe  _reset_vector                          
 00002b60  _stack                                 
-000105c8  _system_post_cinit                     
-000105c4  _system_pre_init                       
-000105ba  abort                                  
-000105c0  blink                                  
+000105fe  _system_post_cinit                     
+000105fa  _system_pre_init                       
+000105f0  abort                                  
+000105f6  blink                                  
 00001c48  dataRateNdx                            
 00004000  fram_ipe_end                           
 00004000  fram_ipe_start                         
 00004000  fram_rw_start                          
 00004000  fram_rx_start                          
 00010192  main                                   
-00010570  memcpy                                 
+000105a6  memcpy                                 
 0000a501  mpu_ctl0_value                         
 00001513  mpu_sam_value                          
 00000400  mpu_segment_border1                    
@@ -2039,7 +2039,7 @@ ffffffff  __c_args__
 00001c49  packetLength                           
 00001c4b  packet_size                            
 00001c47  rfPowerNdx                             
-000105c0  test                                   
+000105f6  test                                   
 00001c00  tx_buffer                              
 
 
@@ -3656,33 +3656,33 @@ address   name
 0000fffe  _reset_vector                          
 00010000  _ZN11CC1101Radio17RegConfigSettingsEv  
 00010192  main                                   
-00010242  __TI_decompress_lzss                   
-000102b8  __TI_auto_init_nobinit_nopinit_hold_wdt
-0001030c  _ZN11CC1101Radio5ResetEv               
-00010352  _ZN11CC1101Radio10SetTxPowerEh         
-00010390  _ZN11CC1101Radio7SpiInitEv             
-000103cc  _ZN11CC1101Radio11SetDataRateEh        
-00010404  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
-00010438  _ZN11CC1101Radio8SendDataEPhh          
-0001046c  __mpu_init                             
-00010498  _ZN11CC1101Radio17SetLogicalChannelEh  
-000104c2  _ZN11CC1101Radio4InitEv                
-000104e6  __TI_zero_init_nomemset                
-0001050a  _ZN11CC1101Radio9RxModeOffEv           
-0001052a  _ZN11CC1101Radio11SpiWriteRegEhh       
-00010544  _ZN11CC1101Radio11SpiTransferEh        
-0001055c  _ZN11CC1101Radio9SpiStrobeEh           
-00010570  memcpy                                 
-00010584  __TI_decompress_none                   
-00010596  _ZN11CC1101Radio4RxOnEv                
-000105a6  _ZN11CC1101Radio4IdleEv                
-000105b0  _ZN11CC1101Radio7GDO_SetEv             
-000105ba  C$$EXIT                                
-000105ba  abort                                  
-000105c0  blink                                  
-000105c0  test                                   
-000105c4  _system_pre_init                       
-000105c8  _system_post_cinit                     
+00010278  __TI_decompress_lzss                   
+000102ee  __TI_auto_init_nobinit_nopinit_hold_wdt
+00010342  _ZN11CC1101Radio5ResetEv               
+00010388  _ZN11CC1101Radio10SetTxPowerEh         
+000103c6  _ZN11CC1101Radio7SpiInitEv             
+00010402  _ZN11CC1101Radio11SetDataRateEh        
+0001043a  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
+0001046e  _ZN11CC1101Radio8SendDataEPhh          
+000104a2  __mpu_init                             
+000104ce  _ZN11CC1101Radio17SetLogicalChannelEh  
+000104f8  _ZN11CC1101Radio4InitEv                
+0001051c  __TI_zero_init_nomemset                
+00010540  _ZN11CC1101Radio9RxModeOffEv           
+00010560  _ZN11CC1101Radio11SpiWriteRegEhh       
+0001057a  _ZN11CC1101Radio11SpiTransferEh        
+00010592  _ZN11CC1101Radio9SpiStrobeEh           
+000105a6  memcpy                                 
+000105ba  __TI_decompress_none                   
+000105cc  _ZN11CC1101Radio4RxOnEv                
+000105dc  _ZN11CC1101Radio4IdleEv                
+000105e6  _ZN11CC1101Radio7GDO_SetEv             
+000105f0  C$$EXIT                                
+000105f0  abort                                  
+000105f6  blink                                  
+000105f6  test                                   
+000105fa  _system_pre_init                       
+000105fe  _system_post_cinit                     
 ffffffff  __TI_pprof_out_hndl                    
 ffffffff  __TI_prof_data_size                    
 ffffffff  __TI_prof_data_start                   

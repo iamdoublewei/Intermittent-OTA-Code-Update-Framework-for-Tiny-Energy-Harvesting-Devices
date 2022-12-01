@@ -83,13 +83,23 @@ void main(void)
     P1DIR |= BIT0;                          // Set P1.0 to output direction
 
     // Create a packet of data
-    tx_buffer[0] = 0;       // op code
-    tx_buffer[1] = 216;     // destination low: 0xD8
-    tx_buffer[2] = 64;      // destination high: 0x40
-    tx_buffer[3] = 2;       // length
-    tx_buffer[4] = 226;     // data 1: 0xE2
-    tx_buffer[5] = 227;     // data 2: 0xE3
-    packet_size = 6;
+    tx_buffer[0] = 1;       // header low
+    tx_buffer[1] = 0;       // header high
+    tx_buffer[2] = 200;     // destination low: 0xC8
+    tx_buffer[3] = 65;      // destination high: 0x41
+    tx_buffer[4] = 5;       // length low
+    tx_buffer[5] = 0;       // length high
+    tx_buffer[6] = 61;     // data 1 low: 0x3D
+    tx_buffer[7] = 64;     // data 1 high: 0x40
+    tx_buffer[8] = 231;     // data 2 low: 0xE7
+    tx_buffer[9] = 0;     // data 2 high: 0x00
+    tx_buffer[10] = 60;     // data 3 low: 0x3C
+    tx_buffer[11] = 64;     // data 3 high: 0x40
+    tx_buffer[12] = 12;     // data 4 low: 0x0C
+    tx_buffer[13] = 0;     // data 4 high: 0x00
+    tx_buffer[14] = 12;     // data 5 low: 0x0C
+    tx_buffer[15] = 93;     // data 5 high: 0x5D
+    packet_size = 16;
     delay(1);
 
     Radio.Init();
