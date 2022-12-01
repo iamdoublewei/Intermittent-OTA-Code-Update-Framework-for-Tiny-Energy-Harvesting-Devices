@@ -64,10 +64,12 @@ MPY32_RES1		.equ	0x04E6
 
 ;-------------------------------------------------------------------------------
 ; Variable Definitions
-; 1. free_address: the starting address of free memory space
-; 2. update_avail: 1: update packet available in rx_buffer
-; 3. sizerx: the size of update packet stored in rx_buffer in bytes
-; 4. rx_buffer: stored received update packet
+; 1. nop_value: raw value for nop instruction
+; 2. jmp_base: the base value (exclude offset) of unconditional jump
+; 3. free_address: the starting address of free memory space
+; 4. update_avail: 1: update packet available in rx_buffer
+; 5. sizerx: the size of update packet stored in rx_buffer in bytes
+; 6. rx_buffer: stored received update packet
 ;    byte 0: opcode
 ;	 byte 1: destination address lower 8 bits
 ;	 byte 2: destination address higher 8 bits
@@ -78,14 +80,15 @@ MPY32_RES1		.equ	0x04E6
 
 _init
 				.text
-				.global free_address,update_avail,rx_buffer,sizerx,init,check_update
+												; All the variables used in assembly is defined in C++ to
+												; avoid compiler SRAM overwrite issue between C++ and assembly
+				.global nop_value,jmp_base,free_address,update_avail,rx_buffer,sizerx,init,check_update
 SetupP1     	bic.b   #BIT0,&P1OUT            ; Clear P1.0 output latch for a defined power-on state
             	bis.b   #BIT0,&P1DIR            ; Set P1.0 to output direction
 SetupP2     	bic.b   #BIT1,&P1OUT            ; Clear P1.1 output latch for a defined power-on state
             	bis.b   #BIT1,&P1DIR            ; Set P1.1 to output direction
-UnlockGPIO  	bic.w   #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on default
-                                            ; high-impedance mode to activate
-                                            ; previously configured port settings
+UnlockGPIO  	bic.w   #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on default high-impedance mode to activate
+                                            	; previously configured port settings
 				call 	#init
 
 _loop
@@ -107,14 +110,6 @@ math8bit		mov.b	#0x0002,R13				; Multiplication
 ;math16bit		mov.w	#0x00e7,R13
 ;				mov.w	#0x000c,R12
 ;				add.w   R13,R12
-;				mov.w	#0x0002,R13
-;				mov.w	#0x0004,R12
-;				mov.w   R13,&MPY32_MPY			; Load operand 1 into multiplier
-;				mov.w   R12,&MPY32_OP2			; Load operand 2 which triggers MPY
-;				mov.w   &MPY32_RESLO,R12		; Move result into return register
-;				mov.w   #0x0012,R13
-;				mov.w   #0x003,R14
-;				call 	#div
 
 math32bit		mov.w   #0x0075,R14
 				mov.w   #0x00a8,R15
@@ -146,103 +141,155 @@ math32bit		mov.w   #0x0075,R14
 ;--------------------------------------------------
 ; Function: 	decode_update
 ; Description:  decode and update packet stored in rx_buffer
-; 				header byte definition: xx         x               xxx           xx
-;										opcode  reserved  instruction_length  copy_length
+; 				header byte definition: xx      xxxxxx,xxxxxxxx
+;										opcode  original length
 ; 										opcode: indicate which update operation.
-; 										reserved: not used
-; 										instruction_length:  indicate the instruction length at the insert/modify point.
-; 										copy_length: indicate the length of instructions(insert/modify) copy to the original space.
-; Register used:R10: header
-----------------------------
+; 										length(insert): the number of word copy from insert point to new memory space.
+; 										length(modify): the number of words copy to the original memory space.
+;				destination definition: special definition for insert
+;										always point to a start address of an instruction (instruction length are varied)
+;										the length of the pointed instruction is defined in header(original length)
+;				example insert packet:  header (2 byte)
+;										destination address (2 bytes)
+;										length (2 byte)
+;										data1 (2 bytes)
+;										data2 (2 bytes)
+;										...
+;				packet design notes: 	reason to use 2 byte size in data is the assembly instruction size can be varied in words.
+;										header or length can be extend to increase the size of original length as needed.
+; Register used:R10: header/original length
+;				R9:  destination address
+;				R8:  length
+; 				R7:  data start address
+;				R6:  free memory start address
+
+;----------------------------
 ; to do: change op => R9, use a temp register instead.
 ; so R9 can dedicated to address pointer
 ; current update, if need to replace last 2 instructions, one empty space will be left.
+; reference assembly code: 				shift: rra.b	R7
 
-decode_update:	mov.b	rx_buffer,R10		 	; read header
-	        	and.b	#11000000b,R10			; bit masking, clear lower 6 bits to extract opcode
-   				cmp.b 	#00000000b,R10    		; Compare with value
-    			jz 		modify      	 		; jump if equal
-				cmp.b 	#01000000b,R10
+decode_update:	mov.w	rx_buffer,R10		 	; read header
+	        	and.w	#1100000000000000b,R10	; bit masking, clear lower 14 bits to extract opcode
+   				cmp 	#0000000000000000b,R10  ; Compare with value
+    			jz 		insert      	 		; jump if equal
+				cmp 	#0100000000000000b,R10
+    			jz 		modify
+				cmp 	#1000000000000000b,R10
     			jz 		delete
-				cmp.b 	#10000000b,R10
+				cmp 	#1100000000000000b,R10
     			jz 		copy
-				cmp.b 	#11000000b,R10
-    			jz 		copy
-cleanup			mov.b	#0x00,update_avail
-				ret
-
-;--------------------------------------------------
-; Register used: R10 update packet start address
-; 				 R7 optional instruction length
-; 				 R6 optional copy length
-;				 R9 destination address
-;				 R8 length
-; 				 R5 data start address
-; 				 R4 free address pointer
-
-insert			mov.w	rx_buffer+1,R10			; destination address
-	   			mov.b	rx_buffer+3,R9			; length
-				mov.b	rx_buffer,R8			; read header
-	        	and.b	#00110000b,R8			; bit masking, clear middle 2 bits to extract instruction length
-				rra.b	R8
-				rra.b	R8
-				rra.b	R8
-				rra.b	R8
-												; copy the instruction from inserting point to
-												; new allocated memory space
-insert			mov.w 	2(R10),R9				; destination address
-				mov.w	4(R10),R8				; length
-				mov.w	6(R10),R5				; data start address
-				mov.w	free_addr,R4			; load free_addr
-insert_l1		dec.w   R7                      ; Decrement R7
-				mov.w	0(R9),0(R4)				; copy
-				mov.w	#nop,0(R9)
-				add.w	#2,R9
-				add.w	#2,R4
-				cmp		#0,R7
-            	jnz     insert_l1               ; copy original instruction done?
-												; caculate jump instruction offset and write jump instruction to
-												; jump from inserting point to new allocated memory space
-				mov.w	free_addr,R13			; R7 temperary free address pointer
+												; load values to registers
+insert			mov.w	rx_buffer+2,R9			; destination address
+	   			mov.w	rx_buffer+4,R8			; length
+	   			mov.w	rx_buffer,R10		 	; read header
+	        	and.w	#0011111111111111b,R10	; clear op code, R10 is original length now
+				mov.w	#(rx_buffer+6),R7		; data start address
+				mov.w	free_address,R6			; free memory start address
+												; backup the memory which is replaced with jump instruction
+				mov.w	0(R9),0(R6)				; copy
+				add.w	#2,R6					; increment free memory start address
+												; calculate jump instruction offset
+				mov.w	R6,R13
 				sub.w	R9,R13					; calculate offset
 				sub.w	#2,R13
 				mov.w	#2,R14
 				call 	#div					; R13/R14, result stored in R15
 				add.w	jmp_base,R15			; add jump base value
-				mov.w	R15,0(R9)
-												; check if need to copy to original memory space
-insert_l2		mov.w	2(R10),R7				; R7 temprary destination address
-				cmp 	#0,R6
-				jz     	insert_l3               ; copy new instructions to original memory space done?
-				mov.w	0(R5),0(R7)				; copy instruction
-				add.w	#2,R5
+				mov.w	R15,0(R9)				; write the jump instruction
+				add.w	#2,R9					; increment destination address
+				dec.w   R10                     ; Decrement R10
+												; fill the rest of unused memory with nop
+insert_l1		cmp 	#0,R10    				; Compare with value
+				jz 		insert_l2      	 		; jump if equal
+				mov.w	nop_value,0(R9)			; write nop instruction
+				add.w	#2,R6					; increment free memory start address
+				add.w	#2,R9					; increment destination address
+				dec.w   R10                     ; Decrement R10
+				jmp		insert_l1
+												; copy the update instructions to the new allocated memory
+insert_l2		cmp		#0,R8					; Update done?
+				jz 		insert_l3      	 		; jump if equal
+				dec.w   R8                   	; Decrement R8
+				mov.w	0(R7),0(R6)				; copy
 				add.w	#2,R7
-				dec.w	R8
-				dec.w	R6
-				jmp 	insert_l2
+				add.w	#2,R6
+				jmp		insert_l2
+; not tested
+												; Calculate jump back instruction
+;insert_l3		sub.w	R9,R8					; should +2 to next instruction, and -2 to calculate offset, cancelled here
+;	        	mov.w	R8,R13
+;	        	mov.w	#2,R14
+;	        	call	#div					; R13/R14, result stored in R15
+;	        	and.w	#0000001111111111b,R15	; bit masking, clear upper 6 bits
+;	        	add.w	jmp_base,R15
+;	        	mov.w	R15,0(R9)
+;	        	add.w	#2,R9
+insert_l3		nop
+
+insert_l4		mov.w	R6,free_address			; update free address
+				jmp		cleanup
+
+
+
+;insert_l1		dec.w   R7                      ; Decrement R7
+;				mov.w	0(R9),0(R4)				; copy
+;				mov.w	#nop,0(R9)
+;				add.w	#2,R9
+;				add.w	#2,R4
+;				cmp		#0,R7
+ ;           	jnz     insert_l1               ; copy original instruction done?
+												; caculate jump instruction offset and write jump instruction to
+												; jump from inserting point to new allocated memory space
+;				mov.w	free_addr,R13			; R7 temperary free address pointer
+;				sub.w	R9,R13					; calculate offset
+;				sub.w	#2,R13
+;				mov.w	#2,R14
+;				call 	#div					; R13/R14, result stored in R15
+;				add.w	jmp_base,R15			; add jump base value
+;				mov.w	R15,0(R9)
+;												; check if need to copy to original memory space
+;insert_l2		mov.w	2(R10),R7				; R7 temprary destination address
+;				cmp 	#0,R6
+;				jz     	insert_l3               ; copy new instructions to original memory space done?
+;				mov.w	0(R5),0(R7)				; copy instruction
+;				add.w	#2,R5
+;				add.w	#2,R7
+;				dec.w	R8
+;				dec.w	R6
+;				jmp 	insert_l2
 												; copy the rest of instructions to the new allocated memory
-insert_l3		dec.w   R8                   	; Decrement R8
-				mov.w	0(R5),0(R7)
-				add.w	#2,R10
-				add.w	#2,R9
-				cmp		#0,R7
-	        	jnz     update               	; Update done?
-	        	sub.w	R9,R8					; Calculate jump back instruction
+;insert_l3		dec.w   R8                   	; Decrement R8
+;				mov.w	0(R5),0(R7)
+;				add.w	#2,R10
+;				add.w	#2,R9
+;				cmp		#0,R7
+;	        	jnz     update               	; Update done?
+;	        	sub.w	R9,R8					; Calculate jump back instruction
 	        									; should +2 to next instruction, and -2 to calculate offset, cancelled here
-	        	mov.w	R8,R13
-	        	mov.w	#2,R14
-	        	call	#div					; R13/R14, result stored in R15
-	        	and.w	#0000001111111111b,R15	; bit masking, clear upper 6 bits
-	        	add.w	jmp_base,R15
-	        	mov.w	R15,0(R9)
-	        	;mov.w	#0x3AE9,0(R9)			; Testing jump
-	        	add.w	#2,R9
-	        	jmp		#cleanup
+;	        	mov.w	R8,R13
+;	        	mov.w	#2,R14
+;	        	call	#div					; R13/R14, result stored in R15
+;	        	and.w	#0000001111111111b,R15	; bit masking, clear upper 6 bits
+;	        	add.w	jmp_base,R15
+;	        	mov.w	R15,0(R9)
+;	        	add.w	#2,R9
+;	        	jmp		#cleanup
 
 ;--------------------------------------------------
 ; modify/replace
-modify:
+modify			jmp		cleanup
 
+;--------------------------------------------------
+; delete
+delete			jmp		cleanup
+
+;--------------------------------------------------
+; copy
+copy			jmp		cleanup
+
+cleanup			mov.b	#0x00,update_avail
+				ret
 ;--------------------------------------------------
 ; Register used: R10 update packet start address
 ;				 R9 destination address
@@ -250,28 +297,28 @@ modify:
 ; 				 R5 data start address
 ; 				 R4 free address pointer
 
-delete:			mov.w	2(R10),R9				; destination address
-    			mov.w	4(R10),R8				; length
-    			mov.w	free_addr,R4
-				sub.w	R8,R11					; calculate offset
-				sub.w	#2,R11
-				mov.w	R11,R13
-				mov.w	#2,R14
-				call 	#div					; R13/R14, result stored in R15
-				add.w	jmp_base,R15			; add jump base value
-				mov.w	R15,R8
-    			jmp 	update_del
+;delete:			mov.w	2(R10),R9				; destination address
+ ;   			mov.w	4(R10),R8				; length
+;    			mov.w	free_addr,R4
+;				sub.w	R8,R11					; calculate offset
+;				sub.w	#2,R11
+;				mov.w	R11,R13
+;				mov.w	#2,R14
+;				call 	#div					; R13/R14, result stored in R15
+;				add.w	jmp_base,R15			; add jump base value
+;				mov.w	R15,R8
+;    			jmp 	update_del
 
-copy:			cmp 	#3,R9
-    			jnz 	mainloop
-    			mov.w	2(R10),R8				; destination address
-    			mov.w	4(R10),R7				; length
-copy_l1 		dec.w   R7                   	; Decrement R7
-				mov.w	0(R10),0(R9)
-				add.w	#2,R10
-				add.w	#2,R9
-				cmp		#0,R7
-	        	jnz     copy_l1             	; Done?
+;copy:			cmp 	#3,R9
+ ;   			jnz 	mainloop
+ ;   			mov.w	2(R10),R8				; destination address
+;    			mov.w	4(R10),R7				; length
+;copy_l1 		dec.w   R7                   	; Decrement R7
+;				mov.w	0(R10),0(R9)
+;				add.w	#2,R10
+;				add.w	#2,R9
+;				cmp		#0,R7
+;	        	jnz     copy_l1             	; Done?
 
 ;-------------------------------------------------------------------------
 ; Register used:R10: data start address
@@ -281,28 +328,27 @@ copy_l1 		dec.w   R7                   	; Decrement R7
 ;               R6:  backup size
 ;---------------------------------------------------------------------------
 ; current update, if need to replace last 2 instructions, one empty space will be left.
-update:
+;update:
 
-update_ins		dec.w   R7                   	; Decrement R7
-				mov.w	0(R10),0(R9)
-				add.w	#2,R10
-				add.w	#2,R9
-				cmp		#0,R7
-	        	jnz     update               	; Update done?
-	        	sub.w	R9,R8					; Calculate jump back instruction
-	       	 									; should +2 to next instruction, and -2 to calculate offset, cancelled here
-	        	mov.w	R8,R13
-	        	mov.w	#2,R14
-	        	call	#div					; R13/R14, result stored in R15
-	        	and.w	#0000001111111111b,R15	; bit masking, clear upper 6 bits
-	        	add.w	jmp_base,R15
-	        	mov.w	R15,0(R9)
-	        	;mov.w	#0x3AE9,0(R9)			; Testing jump
-	        	add.w	#2,R9
-	        	jmp		#cleanup
-update_mod		jmp		#cleanup
-update_del		jmp		#cleanup
-update_copy 	jmp		#cleanup
+;update_ins		dec.w   R7                   	; Decrement R7
+;				mov.w	0(R10),0(R9)
+;				add.w	#2,R10
+;				add.w	#2,R9
+;				cmp		#0,R7
+;	        	jnz     update               	; Update done?
+;	        	sub.w	R9,R8					; Calculate jump back instruction
+;	       	 									; should +2 to next instruction, and -2 to calculate offset, cancelled here
+;	        	mov.w	R8,R13
+;	        	mov.w	#2,R14
+;	        	call	#div					; R13/R14, result stored in R15
+;	        	and.w	#0000001111111111b,R15	; bit masking, clear upper 6 bits
+;	        	add.w	jmp_base,R15
+;	        	mov.w	R15,0(R9)
+;	        	add.w	#2,R9
+;	        	jmp		#cleanup
+;update_mod		jmp		#cleanup
+;update_del		jmp		#cleanup
+;update_copy 	jmp		#cleanup
 
 
 
