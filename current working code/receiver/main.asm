@@ -167,7 +167,6 @@ math32bit		mov.w   #0x0075,R14
 ; to do: change op => R9, use a temp register instead.
 ; so R9 can dedicated to address pointer
 ; current update, if need to replace last 2 instructions, one empty space will be left.
-; reference assembly code: 				shift: rra.b	R7
 
 decode_update:	mov.w	rx_buffer,R10		 	; read header
 	        	and.w	#1100000000000000b,R10	; bit masking, clear lower 14 bits to extract opcode
@@ -188,15 +187,14 @@ insert			mov.w	rx_buffer+2,R9			; destination address
 				mov.w	free_address,R6			; free memory start address
 												; backup the memory which is replaced with jump instruction
 				mov.w	0(R9),0(R6)				; copy
-				add.w	#2,R6					; increment free memory start address
 												; calculate jump instruction offset
-				mov.w	R6,R13
-				sub.w	R9,R13					; calculate offset
-				sub.w	#2,R13
-				mov.w	#2,R14
-				call 	#div					; R13/R14, result stored in R15
-				add.w	jmp_base,R15			; add jump base value
-				mov.w	R15,0(R9)				; write the jump instruction
+				mov.w	R6,R5					; temperary use R5
+				sub.w	R9,R5					; calculate offset
+				sub.w	#2,R5
+				rra.w	R5						; divide by 2
+				add.w	jmp_base,R5				; add jump base value
+				mov.w	R5,0(R9)				; write the jump instruction
+				add.w	#2,R6					; increment free memory start address
 				add.w	#2,R9					; increment destination address
 				dec.w   R10                     ; Decrement R10
 												; fill the rest of unused memory with nop
