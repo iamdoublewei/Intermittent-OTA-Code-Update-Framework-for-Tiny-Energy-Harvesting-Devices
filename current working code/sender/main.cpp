@@ -83,10 +83,10 @@ void main(void)
     P1DIR |= BIT0;                          // Set P1.0 to output direction
 
     // Create a packet of data
-    tx_buffer[0] = 1;       // header low
+    tx_buffer[0] = 3;       // header low
     tx_buffer[1] = 0;       // header high
-    tx_buffer[2] = 200;     // destination low: 0xC8
-    tx_buffer[3] = 65;      // destination high: 0x41
+    tx_buffer[2] = 154;     // destination low: 0x9A
+    tx_buffer[3] = 66;      // destination high: 0x42
     tx_buffer[4] = 5;       // length low
     tx_buffer[5] = 0;       // length high
     tx_buffer[6] = 61;     // data 1 low: 0x3D
