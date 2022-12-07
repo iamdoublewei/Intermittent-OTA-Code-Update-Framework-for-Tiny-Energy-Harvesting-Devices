@@ -65,7 +65,7 @@ MPY32_RES1		.equ	0x04E6
 ;-------------------------------------------------------------------------------
 ; Variable Definitions
 ; 1. nop_value: raw value for nop instruction
-; 2. jmp_base: the base value (exclude offset) of unconditional jump
+; 2. br_base: the first word value for branch instruction
 ; 3. free_address: the starting address of free memory space
 ; 4. update_avail: 1: update packet available in rx_buffer
 ; 5. sizerx: the size of update packet stored in rx_buffer in bytes
@@ -82,7 +82,7 @@ _init
 				.text
 												; All the variables used in assembly is defined in C++ to
 												; avoid compiler SRAM overwrite issue between C++ and assembly
-				.global nop_value,jmp_base,free_address,update_avail,rx_buffer,sizerx,init,check_update
+				.global nop_value,br_base,free_address,update_avail,rx_buffer,sizerx,init,check_update
 SetupP1     	bic.b   #BIT0,&P1OUT            ; Clear P1.0 output latch for a defined power-on state
             	bis.b   #BIT0,&P1DIR            ; Set P1.0 to output direction
 SetupP2     	bic.b   #BIT1,&P1OUT            ; Clear P1.1 output latch for a defined power-on state
@@ -91,47 +91,7 @@ UnlockGPIO  	bic.w   #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on default
                                             	; previously configured port settings
 				call 	#init
 
-_loop
-;-------------------------------------------------------------------------------
-; Benchmarks
-; 1. 8 bit math: multiplication, division, subtraction and addition
-; 2. 16 bit math: multiplication, division, subtraction and addition
-; 3. 32 bit math: multiplication, division, subtraction and addition
-
-math8bit		mov.b	#0x0002,R13				; Multiplication
-				mov.b	#0x0004,R12
-				mov.w   R13,&MPY32_MPY			; Load operand 1 into multiplier
-				mov.w   R12,&MPY32_OP2			; Load operand 2 which triggers MPY
-				mov.w   &MPY32_RESLO,R12		; Move result into return register
-				mov.b	#0x0003,R13				; Addition
-				mov.b	#0x000c,R12
-				add.b   R13,R12
-
-;math16bit		mov.w	#0x00e7,R13
-;				mov.w	#0x000c,R12
-;				add.w   R13,R12
-
-math32bit		mov.w   #0x0075,R14
-				mov.w   #0x00a8,R15
-				mov.w   #0x00e7,R12
-				mov.w   #0x0038,R13
-				add.w   R14,R12
-				addc.w  R15,R13 				; Addition
-				mov.w   #0x0075,R14
-				mov.w   #0x00a8,R15
-				mov.w   #0x00e7,R12
-				mov.w   #0x0038,R13
-				mov.w   R12,&MPY32_MPY32L		; Load operand 1 Low into multiplier
-				mov.w   R13,&MPY32_MPY32H		; Load operand 1 High into multiplier
-				mov.w   R14,&MPY32_OP2L			; Load operand 2 Low into multiplier
-				mov.w   R15,&MPY32_OP2H			; Load operand 2 High, trigger MPY
-				mov.w   &MPY32_RES0,R12			; Ready low 16-bits for return
-				mov.w   &MPY32_RES1,R13			; Ready high 16-bits for return
-				mov.w   #0x0075,R14
-				mov.w   #0x00a8,R15
-				mov.w   #0x00e7,R12
-				mov.w   #0x0038,R13
-
+_loop			call 	#benchmarks
 				call 	#check_update
     			cmp.b 	#0x01,update_avail     	; Compare with #1 value
     			jnz 	_loop      	 			; Repeat loop if not equal
@@ -185,21 +145,19 @@ insert			mov.w	rx_buffer+2,R9			; destination address
 	        	and.w	#0011111111111111b,R10	; clear op code, R10 is original length now
 				mov.w	#(rx_buffer+6),R7		; data start address
 				mov.w	free_address,R6			; free memory start address
-												; backup the memory which is replaced with jump instruction
+												; backup memory at inserting point and replace with branch instruction at
+												; inserting point
 				mov.w	0(R9),0(R6)				; copy
-												; calculate jump instruction offset
-				mov.w	R6,R5					; temperary use R5
-				sub.w	R9,R5					; calculate offset
-				sub.w	#2,R5
-				rra.w	R5						; divide by 2
-				add.w	jmp_base,R5				; add jump base value
-				mov.w	R5,0(R9)				; write the jump instruction
-				add.w	#2,R6					; increment free memory start address
-				add.w	#2,R9					; increment destination address
-				dec.w   R10                     ; Decrement R10
-												; fill the rest of unused memory with nop
+				mov.w	br_base,0(R9)			; write the branch instruction first word
+				mov.w	2(R9),2(R6)				; copy
+				mov.w	R6,2(R9)				; write the branch instruction second word
+				add.w	#4,R6					; increment free memory start address
+				add.w	#4,R9					; increment destination address
+				sub.w   #2,R10                  ; update R10
+												; backup the rest of unused memory and replace with nop instruction
 insert_l1		cmp 	#0,R10    				; Compare with value
 				jz 		insert_l2      	 		; jump if equal
+				mov.w	0(R9),0(R6)				; copy
 				mov.w	nop_value,0(R9)			; write nop instruction
 				add.w	#2,R6					; increment free memory start address
 				add.w	#2,R9					; increment destination address
@@ -213,66 +171,13 @@ insert_l2		cmp		#0,R8					; Update done?
 				add.w	#2,R7
 				add.w	#2,R6
 				jmp		insert_l2
-; not tested
-												; Calculate jump back instruction
-;insert_l3		sub.w	R9,R8					; should +2 to next instruction, and -2 to calculate offset, cancelled here
-;	        	mov.w	R8,R13
-;	        	mov.w	#2,R14
-;	        	call	#div					; R13/R14, result stored in R15
-;	        	and.w	#0000001111111111b,R15	; bit masking, clear upper 6 bits
-;	        	add.w	jmp_base,R15
-;	        	mov.w	R15,0(R9)
-;	        	add.w	#2,R9
-insert_l3		nop
-
-insert_l4		mov.w	R6,free_address			; update free address
+												; write branch instruction jump back to the original code space
+insert_l3		mov.w	br_base,0(R6)			; write the branch instruction first word
+				mov.w	R9,2(R6)				; write the branch instruction second word
+				add.w	#4,R6
+												; update free address
+				mov.w	R6,free_address
 				jmp		cleanup
-
-
-
-;insert_l1		dec.w   R7                      ; Decrement R7
-;				mov.w	0(R9),0(R4)				; copy
-;				mov.w	#nop,0(R9)
-;				add.w	#2,R9
-;				add.w	#2,R4
-;				cmp		#0,R7
- ;           	jnz     insert_l1               ; copy original instruction done?
-												; caculate jump instruction offset and write jump instruction to
-												; jump from inserting point to new allocated memory space
-;				mov.w	free_addr,R13			; R7 temperary free address pointer
-;				sub.w	R9,R13					; calculate offset
-;				sub.w	#2,R13
-;				mov.w	#2,R14
-;				call 	#div					; R13/R14, result stored in R15
-;				add.w	jmp_base,R15			; add jump base value
-;				mov.w	R15,0(R9)
-;												; check if need to copy to original memory space
-;insert_l2		mov.w	2(R10),R7				; R7 temprary destination address
-;				cmp 	#0,R6
-;				jz     	insert_l3               ; copy new instructions to original memory space done?
-;				mov.w	0(R5),0(R7)				; copy instruction
-;				add.w	#2,R5
-;				add.w	#2,R7
-;				dec.w	R8
-;				dec.w	R6
-;				jmp 	insert_l2
-												; copy the rest of instructions to the new allocated memory
-;insert_l3		dec.w   R8                   	; Decrement R8
-;				mov.w	0(R5),0(R7)
-;				add.w	#2,R10
-;				add.w	#2,R9
-;				cmp		#0,R7
-;	        	jnz     update               	; Update done?
-;	        	sub.w	R9,R8					; Calculate jump back instruction
-	        									; should +2 to next instruction, and -2 to calculate offset, cancelled here
-;	        	mov.w	R8,R13
-;	        	mov.w	#2,R14
-;	        	call	#div					; R13/R14, result stored in R15
-;	        	and.w	#0000001111111111b,R15	; bit masking, clear upper 6 bits
-;	        	add.w	jmp_base,R15
-;	        	mov.w	R15,0(R9)
-;	        	add.w	#2,R9
-;	        	jmp		#cleanup
 
 ;--------------------------------------------------
 ; modify/replace
@@ -288,69 +193,6 @@ copy			jmp		cleanup
 
 cleanup			mov.b	#0x00,update_avail
 				ret
-;--------------------------------------------------
-; Register used: R10 update packet start address
-;				 R9 destination address
-;				 R8 length
-; 				 R5 data start address
-; 				 R4 free address pointer
-
-;delete:			mov.w	2(R10),R9				; destination address
- ;   			mov.w	4(R10),R8				; length
-;    			mov.w	free_addr,R4
-;				sub.w	R8,R11					; calculate offset
-;				sub.w	#2,R11
-;				mov.w	R11,R13
-;				mov.w	#2,R14
-;				call 	#div					; R13/R14, result stored in R15
-;				add.w	jmp_base,R15			; add jump base value
-;				mov.w	R15,R8
-;    			jmp 	update_del
-
-;copy:			cmp 	#3,R9
- ;   			jnz 	mainloop
- ;   			mov.w	2(R10),R8				; destination address
-;    			mov.w	4(R10),R7				; length
-;copy_l1 		dec.w   R7                   	; Decrement R7
-;				mov.w	0(R10),0(R9)
-;				add.w	#2,R10
-;				add.w	#2,R9
-;				cmp		#0,R7
-;	        	jnz     copy_l1             	; Done?
-
-;-------------------------------------------------------------------------
-; Register used:R10: data start address
-;				R9:	 current free address pointer
-;				R8:  destination address
-;               R7:  update data length
-;               R6:  backup size
-;---------------------------------------------------------------------------
-; current update, if need to replace last 2 instructions, one empty space will be left.
-;update:
-
-;update_ins		dec.w   R7                   	; Decrement R7
-;				mov.w	0(R10),0(R9)
-;				add.w	#2,R10
-;				add.w	#2,R9
-;				cmp		#0,R7
-;	        	jnz     update               	; Update done?
-;	        	sub.w	R9,R8					; Calculate jump back instruction
-;	       	 									; should +2 to next instruction, and -2 to calculate offset, cancelled here
-;	        	mov.w	R8,R13
-;	        	mov.w	#2,R14
-;	        	call	#div					; R13/R14, result stored in R15
-;	        	and.w	#0000001111111111b,R15	; bit masking, clear upper 6 bits
-;	        	add.w	jmp_base,R15
-;	        	mov.w	R15,0(R9)
-;	        	add.w	#2,R9
-;	        	jmp		#cleanup
-;update_mod		jmp		#cleanup
-;update_del		jmp		#cleanup
-;update_copy 	jmp		#cleanup
-
-
-
-
 
 ;-------------------------------------------------------------------------------
 ; Utility Functions
@@ -393,6 +235,49 @@ div_l2    		rlc     R15        				;1C
             	jmp     div_l2        			;2C    -15C WORST
 div_l4	    	ret            					;3C
 
+;-------------------------------------------------------------------------------
+; Benchmarks
+; 1. 8 bit math: multiplication, division, subtraction and addition
+; 2. 16 bit math: multiplication, division, subtraction and addition
+; 3. 32 bit math: multiplication, division, subtraction and addition
+
+benchmarks:										; 8 bits math
+m8				mov.b	#0x0002,R13				; Multiplication
+				mov.b	#0x0004,R12
+				mov.w   R13,&MPY32_MPY			; Load operand 1 into multiplier
+				mov.w   R12,&MPY32_OP2			; Load operand 2 which triggers MPY
+				mov.w   &MPY32_RESLO,R12		; Move result into return register
+				mov.b	#0x0003,R13				; Addition
+				mov.b	#0x000c,R12
+				add.b   R13,R12
+				;br 		#0x5000					; hex value 0x4030 0x5000
+												; 16 bits math
+;				mov.w	#0x00e7,R13
+;				mov.w	#0x000c,R12
+;				add.w   R13,R12
+												; 32 bits math
+m32				mov.w   #0x0075,R14
+				mov.w   #0x00a8,R15
+				mov.w   #0x00e7,R12
+				mov.w   #0x0038,R13
+				add.w   R14,R12
+				addc.w  R15,R13 				; Addition
+				mov.w   #0x0075,R14
+				mov.w   #0x00a8,R15
+				mov.w   #0x00e7,R12
+				mov.w   #0x0038,R13
+				mov.w   R12,&MPY32_MPY32L		; Load operand 1 Low into multiplier
+				mov.w   R13,&MPY32_MPY32H		; Load operand 1 High into multiplier
+				mov.w   R14,&MPY32_OP2L			; Load operand 2 Low into multiplier
+				mov.w   R15,&MPY32_OP2H			; Load operand 2 High, trigger MPY
+				mov.w   &MPY32_RES0,R12			; Ready low 16-bits for return
+				mov.w   &MPY32_RES1,R13			; Ready high 16-bits for return
+				mov.w   #0x0075,R14
+				mov.w   #0x00a8,R15
+				mov.w   #0x00e7,R12
+				mov.w   #0x0038,R13
+
+				ret
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
 ;-------------------------------------------------------------------------------
