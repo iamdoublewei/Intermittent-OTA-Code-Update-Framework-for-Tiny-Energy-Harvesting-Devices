@@ -15,7 +15,14 @@ CMD_SRCS += \
 ASM_SRCS += \
 ../main.asm 
 
+C_SRCS += \
+../benchmark.c 
+
+C_DEPS += \
+./benchmark.d 
+
 OBJS += \
+./benchmark.obj \
 ./cc1101.obj \
 ./cfile.obj \
 ./main.obj 
@@ -28,9 +35,13 @@ CPP_DEPS += \
 ./cfile.d 
 
 OBJS__QUOTED += \
+"benchmark.obj" \
 "cc1101.obj" \
 "cfile.obj" \
 "main.obj" 
+
+C_DEPS__QUOTED += \
+"benchmark.d" 
 
 CPP_DEPS__QUOTED += \
 "cc1101.d" \
@@ -38,6 +49,9 @@ CPP_DEPS__QUOTED += \
 
 ASM_DEPS__QUOTED += \
 "main.d" 
+
+C_SRCS__QUOTED += \
+"../benchmark.c" 
 
 CPP_SRCS__QUOTED += \
 "../cc1101.cpp" \

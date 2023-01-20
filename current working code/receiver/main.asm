@@ -25,6 +25,67 @@
 ; example: br 0x5000 (0x4030 0x5000)
 ; jump to address 0x5000
 
+;--------------------------------------------------------------------------------
+; Assembly math benchmark (currently not used)
+; benchmarks:
+; 												; 8 bits math
+; m8			mov.b	#0x02,R13				; multiplication
+; 				mov.b	#0x04,R12
+; 				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
+; 				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
+; 				mov.w   &MPY32_RESLO,R12		; move result into return register
+; 				mov.b	#0x24,R13				; division
+; 				mov.b	#0x04,R14
+; 				call 	#div
+; 				mov.b	#0x03,R13				; addition
+; 				mov.b	#0x0C,R12
+; 				add.b   R13,R12
+; 				mov.b	#0x03,R13				; substraction
+; 				mov.b	#0x0C,R12
+; 				sub.b	R13,R12
+; 												; 16 bits math
+; m16			mov.w	#0x1002,R13				; multiplication
+; 				mov.w	#0x0003,R12
+; 				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
+; 				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
+; 				mov.w   &MPY32_RESLO,R12		; move result into return register
+; 				mov.w	#0x3024,R13				; division
+; 				mov.w	#0x0003,R14
+; 				call 	#div
+; 				mov.w	#0x2133,R13				; addition
+; 				mov.w	#0x1CA0,R12
+; 				add.w   R13,R12
+; 				mov.w	#0x2009,R13				; substraction
+; 				mov.w	#0x610A,R12
+; 				sub.w	R13,R12
+; 												; 32 bits math
+; m32			mov.w   #0x0075,R14				; multiplication
+; 				mov.w   #0x00A8,R15
+; 				mov.w   #0x00E7,R12
+; 				mov.w   #0x0038,R13
+; 				mov.w   R12,&MPY32_MPY32L		; load operand 1 Low into multiplier
+; 				mov.w   R13,&MPY32_MPY32H		; load operand 1 High into multiplier
+; 				mov.w   R14,&MPY32_OP2L			; load operand 2 Low into multiplier
+; 				mov.w   R15,&MPY32_OP2H			; load operand 2 High, trigger MPY
+; 				mov.w   &MPY32_RES0,R12			; ready low 16-bits for return
+; 				mov.w   &MPY32_RES1,R13			; ready high 16-bits for return
+; 				mov.w   #0x1000,R12				; division
+; 				mov.w   #0x1116,R13
+; 				mov.w   #0x000A,R14
+; 				call	#div
+; 				mov.w   #0x1000,R14				; addition
+; 				mov.w   #0x0116,R15
+; 				mov.w   #0x000A,R12
+; 				mov.w   #0x0038,R13
+; 				add.w   R14,R12
+; 				addc.w  R15,R13
+; 				mov.w   #0x0305,R14				; substraction
+; 				mov.w   #0x10CA,R15
+; 				mov.w   #0x3002,R12
+; 				mov.w   #0x4035,R13
+; 				sub.w	R14,R12
+; 				subc.w	R15,R13
+
 ;-------------------------------------------------------------------------------
             	.cdecls C,LIST,"msp430.h"       ; Include device header file
             
@@ -80,6 +141,8 @@ _init
 												; all the variables used in assembly is defined in C++ to
 												; avoid compiler SRAM overwrite issue between C++ and assembly
 				.global nop_value,br_base,free_address,update_avail,rx_buffer,sizerx,init,check_update
+												; benchmark
+				.global math,matrix
 SetupP1     	bic.b   #BIT0,&P1OUT            ; clear P1.0 output latch for a defined power-on state
             	bis.b   #BIT0,&P1DIR            ; set P1.0 to output direction
 SetupP2     	bic.b   #BIT1,&P1OUT            ; clear P1.1 output latch for a defined power-on state
@@ -88,7 +151,8 @@ UnlockGPIO  	bic.w   #LOCKLPM5,&PM5CTL0      ; disable the GPIO power-on default
                                             	; previously configured port settings
 				call 	#init
 
-_loop			call 	#benchmarks
+_loop			call 	#math					; math benchmark
+				call	#matrix					; matrix benchmark
 				call 	#check_update
     			cmp.b 	#0x01,update_avail     	; compare with #1 value
     			jnz 	_loop      	 			; repeat loop if not equal
@@ -98,11 +162,15 @@ _loop			call 	#benchmarks
 ;--------------------------------------------------
 ; Function: 	decode_update
 ; Description:  decode and update packet stored in rx_buffer
-; 				header byte definition: xx      xxxxxx,xxxxxxxx
-;										opcode  original length
+; 				header byte definition: xx        xxxxxx,xxxxxxxx
+;										opcode    original length
 ; 										opcode: indicate which update operation.
-; 										length(insert): the number of word copy from insert point to new memory space.
-; 										length(modify): the number of words copy to the original memory space.
+;												0 - insert
+;												1 - modify
+;												2 - delete
+; 												3 - copy
+; 										original length(insert): the number of words copy from insert point to new memory space.
+; 										original length(modify): the number of words copy to the original memory space.
 ;				destination definition: special definition for insert
 ;										always point to a start address of an instruction (instruction length are varied)
 ;										the length of the pointed instruction is defined in header(original length)
@@ -321,49 +389,6 @@ div_l2    		rlc     R15        				;1C
             	jmp     div_l2        			;2C    -15C WORST
 div_l4	    	ret            					;3C
 
-;-------------------------------------------------------------------------------
-; Benchmarks
-; 1. 8 bit math: multiplication, division, subtraction and addition
-; 2. 16 bit math: multiplication, division, subtraction and addition
-; 3. 32 bit math: multiplication, division, subtraction and addition
-
-benchmarks:										; 8 bits math
-m8				mov.b	#0x0002,R13				; multiplication
-				mov.b	#0x0004,R12
-				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
-				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
-				mov.w   &MPY32_RESLO,R12		; move result into return register
-				mov.b	#0x0003,R13				; addition
-				mov.b	#0x000c,R12
-				add.b   R13,R12
-				;br 		#0x5000				; hex value 0x4030 0x5000
-												; update content: 16 bits math
-;				mov.w	#0x00e7,R13
-;				mov.w	#0x000c,R12
-;				add.w   R13,R12
-												; 32 bits math
-m32				mov.w   #0x0075,R14
-				mov.w   #0x00a8,R15
-				mov.w   #0x00e7,R12
-				mov.w   #0x0038,R13
-				add.w   R14,R12
-				addc.w  R15,R13 				; Addition
-				mov.w   #0x0075,R14
-				mov.w   #0x00a8,R15
-				mov.w   #0x00e7,R12
-				mov.w   #0x0038,R13
-				mov.w   R12,&MPY32_MPY32L		; load operand 1 Low into multiplier
-				mov.w   R13,&MPY32_MPY32H		; load operand 1 High into multiplier
-				mov.w   R14,&MPY32_OP2L			; load operand 2 Low into multiplier
-				mov.w   R15,&MPY32_OP2H			; load operand 2 High, trigger MPY
-				mov.w   &MPY32_RES0,R12			; ready low 16-bits for return
-				mov.w   &MPY32_RES1,R13			; ready high 16-bits for return
-				mov.w   #0x0075,R14
-				mov.w   #0x00a8,R15
-				mov.w   #0x00e7,R12
-				mov.w   #0x0038,R13
-
-				ret
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
 ;-------------------------------------------------------------------------------
