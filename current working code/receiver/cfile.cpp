@@ -81,7 +81,7 @@ extern "C" void init(void)
 extern "C" void check_update(void)
 {
     if(Radio.CheckReceiveFlag()) {  // if buffer has contents then flag returns true.
-        blink();
+        led();
         sizerx=Radio.ReceiveData(rx_buffer); // put contents into RX buffer
         update_avail = 1;
         Radio.RxOn();
@@ -91,7 +91,7 @@ extern "C" void check_update(void)
     __no_operation();
 }
 
-void blink(void)
+void led(void)
 {
     P1OUT ^= BIT0;                      // Toggle LED
     P1OUT ^= BIT1;                      // Toggle LED
