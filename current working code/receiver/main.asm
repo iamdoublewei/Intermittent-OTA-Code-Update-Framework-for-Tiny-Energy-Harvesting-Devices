@@ -110,15 +110,19 @@ StopWDT     	mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 
 _main
 
-MPY32_MPY 		.equ 	0x04C0
-MPY32_OP2		.equ 	0x04C8
-MPY32_RESLO		.equ 	0x04CA
-MPY32_MPY32L	.equ    0x04D0
-MPY32_MPY32H	.equ    0x04D2
-MPY32_OP2L		.equ	0x04E0
-MPY32_OP2H		.equ	0x04E2
-MPY32_RES0		.equ	0x04E4
-MPY32_RES1		.equ	0x04E6
+MPY32_MPY 		.set 	0x04C0
+MPY32_OP2		.set 	0x04C8
+MPY32_RESLO		.set 	0x04CA
+MPY32_MPY32L	.set    0x04D0
+MPY32_MPY32H	.set    0x04D2
+MPY32_OP2L		.set	0x04E0
+MPY32_OP2H		.set	0x04E2
+MPY32_RES0		.set	0x04E4
+MPY32_RES1		.set	0x04E6
+ARY1			.set	0x2100
+ARY1S			.set	0x2110
+MX1				.set	0x2100
+MX2				.set	0x2200
 
 ;-------------------------------------------------------------------------------
 ; Variable Definitions
@@ -128,9 +132,8 @@ MPY32_RES1		.equ	0x04E6
 ; 4. update_avail: 1: update packet available in rx_buffer
 ; 5. sizerx: the size of update packet stored in rx_buffer in bytes
 ; 6. rx_buffer: stored received update packet
-; 7. data_address: the start address to store matrix data
-; 8. init: initialize wireless communication
-; 9. check_update: check if there is an update available
+; 7. init: initialize wireless communication
+; 8. check_update: check if there is an update available
 ;    byte 0: opcode
 ;	 byte 1: destination address lower 8 bits
 ;	 byte 2: destination address higher 8 bits
@@ -143,7 +146,7 @@ _init
 				.text
 												; all the variables used in assembly is defined in C++ to
 												; avoid compiler SRAM overwrite issue between C++ and assembly
-				.global nop_value,br_base,free_address,checkpoint_buffer,update_avail,rx_buffer,data_address,sizerx,init,check_update
+				.global nop_value,br_base,free_address,checkpoint_buffer,update_avail,rx_buffer,sizerx,init,check_update
 												; benchmark
 ;				.global math,matrix
 setup_gpio     	bic.b   #BIT0,&P1OUT            ; clear P1.0 output latch for a defined power-on state
@@ -165,8 +168,9 @@ unlock_gpio  	bic.w   #LOCKLPM5,&PM5CTL0      ; disable the GPIO power-on defaul
 ;            	nop                             ; for debug
 				call 	#init
 
-_loop			call 	#math					; benchmark
-				call	#matrix
+_loop			call 	#math					; benchmark math
+				call	#matrix					; benchmark matrix
+				call	#sort					; benchmark sort
 				call 	#check_update
     			cmp.b 	#0x01,update_avail     	; compare with #1 value
     			jnz 	_loop      	 			; repeat loop if not equal
@@ -510,7 +514,7 @@ TIMER0_A0_ISR									; Timer0_A3 CC0 Interrupt Service Routine
 
 ;---------------------------------------------------------------------
 ; benchmark
-math:
+math:											; math benchmark
  												; 8 bits math
 				mov.b	#0x02,R13				; multiplication
  				mov.b	#0x04,R12
@@ -568,72 +572,67 @@ math:
  				mov.w   #0x4035,R13
  				sub.w	R14,R12
  				subc.w	R15,R13
-
 math_end		ret
 
 ; mamul assembly example: https://github.com/khairanabila/nab-NN
 ;https://github.com/AgentANAKIN/Gender-Predictor-Neural-Network-in-C/blob/master/gpnnc.c
-matrix:
+matrix:											; martix benchmark
+				mov.w	#MX1,R4
+				mov.w	#MX1,R5
+matrix_init
 												; matrix 1
-				mov.w	#0x0005,data_address	; m1_row
-				mov.w	#0x0005,data_address+2	; m1_col
-				mov.w	#0x0099,data_address+4
-				mov.w	#0x0056,data_address+6
-				mov.w	#0x0090,data_address+8
-				mov.w	#0x0034,data_address+10
-				mov.w	#0x0078,data_address+12
-				mov.w	#0x0012,data_address+14
-				mov.w	#0x0056,data_address+16
-				mov.w	#0x0090,data_address+18
-				mov.w	#0x0034,data_address+20
-				mov.w	#0x0078,data_address+22
-				mov.w	#0x0012,data_address+24
-				mov.w	#0x0056,data_address+26
-				mov.w	#0x0090,data_address+28
-				mov.w	#0x0034,data_address+30
-				mov.w	#0x0078,data_address+32
-				mov.w	#0x0012,data_address+34
-				mov.w	#0x0012,data_address+36
-				mov.w	#0x0056,data_address+38
-				mov.w	#0x0090,data_address+40
-				mov.w	#0x0034,data_address+42
-				mov.w	#0x0078,data_address+44
-				mov.w	#0x0012,data_address+46
-				mov.w	#0x0056,data_address+48
-				mov.w	#0x0090,data_address+50
-				mov.w	#0x0034,data_address+52
+				mov.w	#0x0005,0(R4)
+				mov.w	#0x0015,2(R4)
+				mov.w	#0x0099,4(R4)
+				mov.w	#0x0056,6(R4)
+				mov.w	#0x0090,8(R4)
+				mov.w	#0x0034,10(R4)
+				mov.w	#0x0078,12(R4)
+				mov.w	#0x0012,14(R4)
+				mov.w	#0x0056,16(R4)
+				mov.w	#0x0090,18(R4)
+				mov.w	#0x0034,20(R4)
+				mov.w	#0x0078,22(R4)
+				mov.w	#0x0012,24(R4)
+				mov.w	#0x0056,26(R4)
+				mov.w	#0x0090,28(R4)
+				mov.w	#0x0034,30(R4)
+				mov.w	#0x0078,32(R4)
+				mov.w	#0x0012,34(R4)
+				mov.w	#0x0012,36(R4)
+				mov.w	#0x0056,38(R4)
+				mov.w	#0x0090,40(R4)
+				mov.w	#0x0034,42(R4)
+				mov.w	#0x0078,44(R4)
+				mov.w	#0x0012,46(R4)
+				mov.w	#0x0056,48(R4)
 												; matrix 2
-				mov.w	#0x0005,data_address+54	; m1_row
-				mov.w	#0x0005,data_address+56	; m1_col
-				mov.w	#0x0099,data_address+58
-				mov.w	#0x0056,data_address+60
-				mov.w	#0x0090,data_address+62
-				mov.w	#0x0034,data_address+64
-				mov.w	#0x0078,data_address+66
-				mov.w	#0x0012,data_address+68
-				mov.w	#0x0056,data_address+70
-				mov.w	#0x0090,data_address+72
-				mov.w	#0x0034,data_address+74
-				mov.w	#0x0078,data_address+76
-				mov.w	#0x0012,data_address+78
-				mov.w	#0x0056,data_address+80
-				mov.w	#0x0090,data_address+82
-				mov.w	#0x0034,data_address+84
-				mov.w	#0x0078,data_address+86
-				mov.w	#0x0012,data_address+88
-				mov.w	#0x0012,data_address+90
-				mov.w	#0x0056,data_address+92
-				mov.w	#0x0090,data_address+94
-				mov.w	#0x0034,data_address+96
-				mov.w	#0x0078,data_address+98
-				mov.w	#0x0012,data_address+100
-				mov.w	#0x0056,data_address+102
-				mov.w	#0x0090,data_address+104
-				mov.w	#0x0034,data_address+106
-
+				mov.w	#0x0099,0(R5)
+				mov.w	#0x0056,2(R5)
+				mov.w	#0x0090,4(R5)
+				mov.w	#0x0034,6(R5)
+				mov.w	#0x0078,8(R5)
+				mov.w	#0x0012,10(R5)
+				mov.w	#0x0056,12(R5)
+				mov.w	#0x0090,14(R5)
+				mov.w	#0x0034,16(R5)
+				mov.w	#0x0078,18(R5)
+				mov.w	#0x0012,20(R5)
+				mov.w	#0x0056,22(R5)
+				mov.w	#0x0090,24(R5)
+				mov.w	#0x0034,26(R5)
+				mov.w	#0x0078,28(R5)
+				mov.w	#0x0012,30(R5)
+				mov.w	#0x0012,32(R5)
+				mov.w	#0x0056,34(R5)
+				mov.w	#0x0090,36(R5)
+				mov.w	#0x0034,38(R5)
+				mov.w	#0x0078,40(R5)
+				mov.w	#0x0012,42(R5)
+				mov.w	#0x0056,44(R5)
+				mov.w	#0x0090,46(R5)
+				mov.w	#0x0034,48(R5)
 												; matrix copy
-		       	mov.w 	data_address,R4			; matrix 1 start address
-				mov.w	data_address+54,R5		; matrix 2 start address
 				mov.w	R4,R6
 matrix_l1		cmp		R6,R5					; copy done?
 				push.b	0(R6)
@@ -650,10 +649,51 @@ matrix_l2		mov.b	0(R6),R8
 				dec		R7
 				cmp		R6,R5
 				jnz		matrix_l2				; jump if equal
-
-				.text
 matrix_end		ret
 
+sort:											; bubble sort algorithm benchmark
+				mov.w	#ARY1,R4
+				mov.w	#ARY1S,R6
+sort_init		mov.b	#10,0(R4)
+				mov.b	#45,1(R4)
+				mov.b	#-23,2(R4)
+				mov.b	#-78,3(R4)
+ 				mov.b	#32,4(R4)
+				mov.b	#89,5(R4)
+				mov.b	#-19,6(R4)
+				mov.b	#-99,7(R4)
+				mov.b	#73,8(R4)
+				mov.b	#-18,9(R4)
+				mov.b	#56,10(R4)
+sort_copy		mov.b	0(R4),R7
+				inc.w	R7 						; off by one fix
+				mov.w	R4,R8 					; R8 pointer to extract data
+				mov.w	R6,R9 					; R9 pointer to insert data
+sort_copy_l1	mov.b	@R8+,0(R9) 				; shift elem
+				inc.w	R9
+				dec.w	R7
+				jnz		sort_copy_l1
+sorting			mov.b	0(R4),R7 				; i (outer)
+				dec.w	R7
+OUTER_LOOP:		mov.b	0(R4),R8 				; j (inner)
+				sub.w	R11,R8 					; prevent un-necessary amount of iterations
+				dec.w	R8
+				mov.w	R6,R9 					; reset R9 pointer to the start R9[0]
+				inc.w	R9 	   					; shift R9 to *(R6+1) in the interest of not removing the size component of the arr
+INNER_LOOP:		cmp.b	@R9+,0(R9) 				; gets R9[i] than increments making the next elem R9[++i]
+				jge 	IL_SENTINEL
+												; handle a swap
+				mov.b	-1(R9),	R10
+				mov.b	0(R9),-1(R9)
+				mov.b	R10,0(R9)
+IL_SENTINEL:
+				dec.w	R8
+				jnz		INNER_LOOP 				; if it is zero than you decrement the outer look sentinel now
+												; if it is zero, increment R11 by 1 to do less iterations since you know one position is sorted correctly now
+				inc.w	R11
+				dec.w	R7
+				jnz		OUTER_LOOP
+				ret
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
 ;-------------------------------------------------------------------------------
