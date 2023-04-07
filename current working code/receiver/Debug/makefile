@@ -10,6 +10,7 @@ GEN_OPTS__FLAG :=
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
+"./benchmark.obj" \
 "./cc1101.obj" \
 "./cfile.obj" \
 "./main.obj" \
@@ -145,7 +146,8 @@ receiver.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "cc1101.obj" "cfile.obj" "main.obj" 
+	-$(RM) "benchmark.obj" "cc1101.obj" "cfile.obj" "main.obj" 
+	-$(RM) "benchmark.d" 
 	-$(RM) "cc1101.d" "cfile.d" 
 	-$(RM) "main.d" 
 	-@echo 'Finished clean'
