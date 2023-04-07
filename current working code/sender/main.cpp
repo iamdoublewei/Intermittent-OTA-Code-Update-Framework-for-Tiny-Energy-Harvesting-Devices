@@ -72,21 +72,83 @@ uint8_t tx_buffer[61]={0};
 uint8_t packet_size;
 volatile uint8_t flag;
 
-void main(void)
+// insert 16 bit math with green led blinking
+void math_insert()
 {
-    WDTCTL = WDTPW | WDTHOLD;               // Stop WDT
-    PM5CTL0 &= ~LOCKLPM5;                   // Disable the GPIO power-on default high-impedance mode
-                                            // to activate previously configured port settings
+    // Create a packet of data
+    tx_buffer[0] = 0x01;        // header low
+    tx_buffer[1] = 0x00;        // header high
+    tx_buffer[2] = 0x12;        // destination low: 0xCA
+    tx_buffer[3] = 0x43;        // destination high: 0x41
+    tx_buffer[4] = 0x1C;        // length low (size: 28)
+    tx_buffer[5] = 0x00;        // length high
+    tx_buffer[6] = 0x3D;        // data 1 low
+    tx_buffer[7] = 0x40;        // data 1 high
+    tx_buffer[8] = 0x02;        // data 2 low
+    tx_buffer[9] = 0x10;        // data 2 high
+    tx_buffer[10] = 0x3C;
+    tx_buffer[11] = 0x40;
+    tx_buffer[12] = 0x03;
+    tx_buffer[13] = 0x00;
+    tx_buffer[14] = 0x82;
+    tx_buffer[15] = 0x4D;
+    tx_buffer[16] = 0xC0;
+    tx_buffer[17] = 0x04;
+    tx_buffer[18] = 0x82;
+    tx_buffer[19] = 0x4C;
+    tx_buffer[20] = 0xC8;
+    tx_buffer[21] = 0x04;
+    tx_buffer[22] = 0x1C;
+    tx_buffer[23] = 0x42;
+    tx_buffer[24] = 0xCA;
+    tx_buffer[25] = 0x04;
+    tx_buffer[26] = 0x3D;
+    tx_buffer[27] = 0x40;
+    tx_buffer[28] = 0x24;
+    tx_buffer[29] = 0x30;
+    tx_buffer[30] = 0x3E;
+    tx_buffer[31] = 0x40;
+    tx_buffer[32] = 0x03;
+    tx_buffer[33] = 0x00;
+    tx_buffer[34] = 0xB0;
+    tx_buffer[35] = 0x12;
+    tx_buffer[36] = 0xC2;       // changed watch later
+    tx_buffer[37] = 0x43;       // changed watch later
+    tx_buffer[38] = 0x3D;
+    tx_buffer[39] = 0x40;
+    tx_buffer[40] = 0x33;
+    tx_buffer[41] = 0x21;
+    tx_buffer[42] = 0x3C;
+    tx_buffer[43] = 0x40;
+    tx_buffer[44] = 0xA0;
+    tx_buffer[45] = 0x1C;
+    tx_buffer[46] = 0x0C;
+    tx_buffer[47] = 0x5D;
+    tx_buffer[48] = 0x3D;
+    tx_buffer[49] = 0x40;
+    tx_buffer[50] = 0x09;
+    tx_buffer[51] = 0x20;
+    tx_buffer[52] = 0x3C;
+    tx_buffer[53] = 0x40;
+    tx_buffer[54] = 0x0A;
+    tx_buffer[55] = 0x61;
+    tx_buffer[56] = 0x0C;
+    tx_buffer[57] = 0x8D;
+    tx_buffer[58] = 0xE2;
+    tx_buffer[59] = 0xE3;
+    tx_buffer[58] = 0x02;
+    tx_buffer[59] = 0x02;
+    packet_size = 60;
+}
 
-    // Configure GPIO
-    P1OUT &= ~BIT0;                         // Clear P1.0 output latch for a defined power-on state
-    P1DIR |= BIT0;                          // Set P1.0 to output direction
-
+// replace 32 bit math with 8 bit math and red led blinking
+void math_modify()
+{
     // Create a packet of data
     tx_buffer[0] = 3;       // header low
     tx_buffer[1] = 0;       // header high
-    tx_buffer[2] = 154;     // destination low: 0x9A
-    tx_buffer[3] = 66;      // destination high: 0x42
+    tx_buffer[2] = 202;     // destination low: 0xCA
+    tx_buffer[3] = 65;      // destination high: 0x41
     tx_buffer[4] = 5;       // length low
     tx_buffer[5] = 0;       // length high
     tx_buffer[6] = 61;     // data 1 low: 0x3D
@@ -100,7 +162,130 @@ void main(void)
     tx_buffer[14] = 12;     // data 5 low: 0x0C
     tx_buffer[15] = 93;     // data 5 high: 0x5D
     packet_size = 16;
-    delay(1);
+}
+
+// remove previous modified 8 bit math and red led blinking
+void math_delete()
+{
+    // Create a packet of data
+    tx_buffer[0] = 3;       // header low
+    tx_buffer[1] = 0;       // header high
+    tx_buffer[2] = 202;     // destination low: 0xCA
+    tx_buffer[3] = 65;      // destination high: 0x41
+    tx_buffer[4] = 5;       // length low
+    tx_buffer[5] = 0;       // length high
+    tx_buffer[6] = 61;     // data 1 low: 0x3D
+    tx_buffer[7] = 64;     // data 1 high: 0x40
+    tx_buffer[8] = 231;     // data 2 low: 0xE7
+    tx_buffer[9] = 0;     // data 2 high: 0x00
+    tx_buffer[10] = 60;     // data 3 low: 0x3C
+    tx_buffer[11] = 64;     // data 3 high: 0x40
+    tx_buffer[12] = 12;     // data 4 low: 0x0C
+    tx_buffer[13] = 0;     // data 4 high: 0x00
+    tx_buffer[14] = 12;     // data 5 low: 0x0C
+    tx_buffer[15] = 93;     // data 5 high: 0x5D
+    packet_size = 16;
+}
+
+void matrix_insert()
+{
+    // Create a packet of data
+    tx_buffer[0] = 3;       // header low
+    tx_buffer[1] = 0;       // header high
+    tx_buffer[2] = 202;     // destination low: 0xCA
+    tx_buffer[3] = 65;      // destination high: 0x41
+    tx_buffer[4] = 5;       // length low
+    tx_buffer[5] = 0;       // length high
+    tx_buffer[6] = 61;     // data 1 low: 0x3D
+    tx_buffer[7] = 64;     // data 1 high: 0x40
+    tx_buffer[8] = 231;     // data 2 low: 0xE7
+    tx_buffer[9] = 0;     // data 2 high: 0x00
+    tx_buffer[10] = 60;     // data 3 low: 0x3C
+    tx_buffer[11] = 64;     // data 3 high: 0x40
+    tx_buffer[12] = 12;     // data 4 low: 0x0C
+    tx_buffer[13] = 0;     // data 4 high: 0x00
+    tx_buffer[14] = 12;     // data 5 low: 0x0C
+    tx_buffer[15] = 93;     // data 5 high: 0x5D
+    packet_size = 16;
+}
+
+void matrix_modify()
+{
+    // Create a packet of data
+    tx_buffer[0] = 3;       // header low
+    tx_buffer[1] = 0;       // header high
+    tx_buffer[2] = 202;     // destination low: 0xCA
+    tx_buffer[3] = 65;      // destination high: 0x41
+    tx_buffer[4] = 5;       // length low
+    tx_buffer[5] = 0;       // length high
+    tx_buffer[6] = 61;     // data 1 low: 0x3D
+    tx_buffer[7] = 64;     // data 1 high: 0x40
+    tx_buffer[8] = 231;     // data 2 low: 0xE7
+    tx_buffer[9] = 0;     // data 2 high: 0x00
+    tx_buffer[10] = 60;     // data 3 low: 0x3C
+    tx_buffer[11] = 64;     // data 3 high: 0x40
+    tx_buffer[12] = 12;     // data 4 low: 0x0C
+    tx_buffer[13] = 0;     // data 4 high: 0x00
+    tx_buffer[14] = 12;     // data 5 low: 0x0C
+    tx_buffer[15] = 93;     // data 5 high: 0x5D
+    packet_size = 16;
+}
+
+void matrix_copy()
+{
+    // Create a packet of data
+    tx_buffer[0] = 3;       // header low
+    tx_buffer[1] = 0;       // header high
+    tx_buffer[2] = 202;     // destination low: 0xCA
+    tx_buffer[3] = 65;      // destination high: 0x41
+    tx_buffer[4] = 5;       // length low
+    tx_buffer[5] = 0;       // length high
+    tx_buffer[6] = 61;     // data 1 low: 0x3D
+    tx_buffer[7] = 64;     // data 1 high: 0x40
+    tx_buffer[8] = 231;     // data 2 low: 0xE7
+    tx_buffer[9] = 0;     // data 2 high: 0x00
+    tx_buffer[10] = 60;     // data 3 low: 0x3C
+    tx_buffer[11] = 64;     // data 3 high: 0x40
+    tx_buffer[12] = 12;     // data 4 low: 0x0C
+    tx_buffer[13] = 0;     // data 4 high: 0x00
+    tx_buffer[14] = 12;     // data 5 low: 0x0C
+    tx_buffer[15] = 93;     // data 5 high: 0x5D
+    packet_size = 16;
+}
+
+void matrix_delete()
+{
+    // Create a packet of data
+    tx_buffer[0] = 3;       // header low
+    tx_buffer[1] = 0;       // header high
+    tx_buffer[2] = 202;     // destination low: 0xCA
+    tx_buffer[3] = 65;      // destination high: 0x41
+    tx_buffer[4] = 5;       // length low
+    tx_buffer[5] = 0;       // length high
+    tx_buffer[6] = 61;     // data 1 low: 0x3D
+    tx_buffer[7] = 64;     // data 1 high: 0x40
+    tx_buffer[8] = 231;     // data 2 low: 0xE7
+    tx_buffer[9] = 0;     // data 2 high: 0x00
+    tx_buffer[10] = 60;     // data 3 low: 0x3C
+    tx_buffer[11] = 64;     // data 3 high: 0x40
+    tx_buffer[12] = 12;     // data 4 low: 0x0C
+    tx_buffer[13] = 0;     // data 4 high: 0x00
+    tx_buffer[14] = 12;     // data 5 low: 0x0C
+    tx_buffer[15] = 93;     // data 5 high: 0x5D
+    packet_size = 16;
+}
+
+void main(void)
+{
+    WDTCTL = WDTPW | WDTHOLD;               // Stop WDT
+    PM5CTL0 &= ~LOCKLPM5;                   // Disable the GPIO power-on default high-impedance mode
+                                            // to activate previously configured port settings
+
+    // Configure GPIO
+    P1OUT &= ~BIT0;                         // Clear P1.0 output latch for a defined power-on state
+    P1DIR |= BIT0;                          // Set P1.0 to output direction
+
+
 
     Radio.Init();
     Radio.SetDataRate(5); // Needs to be the same in Tx and Rx
@@ -108,8 +293,16 @@ void main(void)
     Radio.SetTxPower(0);
 
     while(1) {
+        math_insert();
+//        math_modify();
+//        math_copy();
+//        math_delete();
+//        matrix_insert();
+//        matrix_modify();
+//        matrix_copy();
+//        matrix_delete();
+        delay(1);
         Radio.SendData(tx_buffer, packet_size);
-        test();
         delay(1);
         Radio.Idle();
         delay(50);
