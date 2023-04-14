@@ -13,5 +13,4 @@
 	<createSlaveProjects value=""/>
 	<templateProperties value="id=com.ti.ccstudio.project.templates.emptyAssemblyOnly_msp430,isAssemblyOnly=true"/>
 	<filesToOpen value="main.asm"/>
-	<origin value="C:/Users/lx505/Documents/GitHub/Assembly_update/current working code/receiver"/>
 </projectOptions>
