@@ -25,6 +25,67 @@
 ; example: br 0x5000 (0x4030 0x5000)
 ; jump to address 0x5000
 
+;--------------------------------------------------------------------------------
+; Assembly math benchmark (currently not used)
+; benchmarks:
+; 												; 8 bits math
+; m8			mov.b	#0x02,R13				; multiplication
+; 				mov.b	#0x04,R12
+; 				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
+; 				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
+; 				mov.w   &MPY32_RESLO,R12		; move result into return register
+; 				mov.b	#0x24,R13				; division
+; 				mov.b	#0x04,R14
+; 				call 	#div
+; 				mov.b	#0x03,R13				; addition
+; 				mov.b	#0x0C,R12
+; 				add.b   R13,R12
+; 				mov.b	#0x03,R13				; substraction
+; 				mov.b	#0x0C,R12
+; 				sub.b	R13,R12
+; 												; 16 bits math
+; m16			mov.w	#0x1002,R13				; multiplication
+; 				mov.w	#0x0003,R12
+; 				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
+; 				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
+; 				mov.w   &MPY32_RESLO,R12		; move result into return register
+; 				mov.w	#0x3024,R13				; division
+; 				mov.w	#0x0003,R14
+; 				call 	#div
+; 				mov.w	#0x2133,R13				; addition
+; 				mov.w	#0x1CA0,R12
+; 				add.w   R13,R12
+; 				mov.w	#0x2009,R13				; substraction
+; 				mov.w	#0x610A,R12
+; 				sub.w	R13,R12
+; 												; 32 bits math
+; m32			mov.w   #0x0075,R14				; multiplication
+; 				mov.w   #0x00A8,R15
+; 				mov.w   #0x00E7,R12
+; 				mov.w   #0x0038,R13
+; 				mov.w   R12,&MPY32_MPY32L		; load operand 1 Low into multiplier
+; 				mov.w   R13,&MPY32_MPY32H		; load operand 1 High into multiplier
+; 				mov.w   R14,&MPY32_OP2L			; load operand 2 Low into multiplier
+; 				mov.w   R15,&MPY32_OP2H			; load operand 2 High, trigger MPY
+; 				mov.w   &MPY32_RES0,R12			; ready low 16-bits for return
+; 				mov.w   &MPY32_RES1,R13			; ready high 16-bits for return
+; 				mov.w   #0x1000,R12				; division
+; 				mov.w   #0x1116,R13
+; 				mov.w   #0x000A,R14
+; 				call	#div
+; 				mov.w   #0x1000,R14				; addition
+; 				mov.w   #0x0116,R15
+; 				mov.w   #0x000A,R12
+; 				mov.w   #0x0038,R13
+; 				add.w   R14,R12
+; 				addc.w  R15,R13
+; 				mov.w   #0x0305,R14				; substraction
+; 				mov.w   #0x10CA,R15
+; 				mov.w   #0x3002,R12
+; 				mov.w   #0x4035,R13
+; 				sub.w	R14,R12
+; 				subc.w	R15,R13
+
 ;-------------------------------------------------------------------------------
             	.cdecls C,LIST,"msp430.h"       ; Include device header file
             
@@ -49,22 +110,15 @@ StopWDT     	mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 
 _main
 
-MPY32_MPY 		.set 	0x04C0
-MPY32_OP2		.set 	0x04C8
-MPY32_RESLO		.set 	0x04CA
-MPY32_MPY32L	.set    0x04D0
-MPY32_MPY32H	.set    0x04D2
-MPY32_OP2L		.set	0x04E0
-MPY32_OP2H		.set	0x04E2
-MPY32_RES0		.set	0x04E4
-MPY32_RES1		.set	0x04E6
-MX1_FRAM		.set	0x4D00
-MX2_FRAM		.set	0x4E00
-MX1_RAM			.set	0x2100
-MX2_RAM			.set	0x2200
-ARY_FRAM		.set	0x4F00
-ARY_RAM			.set	0x2100
-ARYS			.set	0x2110
+MPY32_MPY 		.equ 	0x04C0
+MPY32_OP2		.equ 	0x04C8
+MPY32_RESLO		.equ 	0x04CA
+MPY32_MPY32L	.equ    0x04D0
+MPY32_MPY32H	.equ    0x04D2
+MPY32_OP2L		.equ	0x04E0
+MPY32_OP2H		.equ	0x04E2
+MPY32_RES0		.equ	0x04E4
+MPY32_RES1		.equ	0x04E6
 
 ;-------------------------------------------------------------------------------
 ; Variable Definitions
@@ -74,8 +128,9 @@ ARYS			.set	0x2110
 ; 4. update_avail: 1: update packet available in rx_buffer
 ; 5. sizerx: the size of update packet stored in rx_buffer in bytes
 ; 6. rx_buffer: stored received update packet
-; 7. init: initialize wireless communication
-; 8. check_update: check if there is an update available
+; 7. data_address: the start address to store matrix data
+; 8. init: initialize wireless communication
+; 9. check_update: check if there is an update available
 ;    byte 0: opcode
 ;	 byte 1: destination address lower 8 bits
 ;	 byte 2: destination address higher 8 bits
@@ -88,102 +143,34 @@ _init
 				.text
 												; all the variables used in assembly is defined in C++ to
 												; avoid compiler SRAM overwrite issue between C++ and assembly
-				.global nop_value,br_base,free_address,checkpoint_buffer,update_avail,rx_buffer,sizerx,init,check_update
-				call 	#init
-matrix_init		mov.w	#MX1_FRAM,R4
-				mov.w	#MX2_FRAM,R5
-				mov.w	#0x0006,0(R4)			; matrix 1 init
-				mov.w	#0x0015,2(R4)
-				mov.w	#0x0099,4(R4)
-				mov.w	#0x0056,6(R4)
-				mov.w	#0x0090,8(R4)
-				mov.w	#0x0034,10(R4)
-				mov.w	#0x0078,12(R4)
-				mov.w	#0x0012,14(R4)
-				mov.w	#0x0056,16(R4)
-				mov.w	#0x0090,18(R4)
-				mov.w	#0x0034,20(R4)
-				mov.w	#0x0078,22(R4)
-				mov.w	#0x0012,24(R4)
-				mov.w	#0x0056,26(R4)
-				mov.w	#0x0090,28(R4)
-				mov.w	#0x0034,30(R4)
-				mov.w	#0x0078,32(R4)
-				mov.w	#0x0012,34(R4)
-				mov.w	#0x0012,36(R4)
-				mov.w	#0x0056,38(R4)
-				mov.w	#0x0090,40(R4)
-				mov.w	#0x0034,42(R4)
-				mov.w	#0x0078,44(R4)
-				mov.w	#0x0012,46(R4)
-				mov.w	#0x0056,48(R4)
-				mov.w	#0x0099,0(R5)			; matrix 2 init
-				mov.w	#0x0056,2(R5)
-				mov.w	#0x0090,4(R5)
-				mov.w	#0x0034,6(R5)
-				mov.w	#0x0078,8(R5)
-				mov.w	#0x0012,10(R5)
-				mov.w	#0x0056,12(R5)
-				mov.w	#0x0090,14(R5)
-				mov.w	#0x0034,16(R5)
-				mov.w	#0x0078,18(R5)
-				mov.w	#0x0012,20(R5)
-				mov.w	#0x0056,22(R5)
-				mov.w	#0x0090,24(R5)
-				mov.w	#0x0034,26(R5)
-				mov.w	#0x0078,28(R5)
-				mov.w	#0x0012,30(R5)
-				mov.w	#0x0012,32(R5)
-				mov.w	#0x0056,34(R5)
-				mov.w	#0x0090,36(R5)
-				mov.w	#0x0034,38(R5)
-				mov.w	#0x0078,40(R5)
-				mov.w	#0x0012,42(R5)
-				mov.w	#0x0056,44(R5)
-				mov.w	#0x0090,46(R5)
-				mov.w	#0x0034,48(R5)
-ary_init		mov.w	#ARY_FRAM,R4
-				mov.b	#10,0(R4)				; array 1 init
-				mov.b	#45,1(R4)
-				mov.b	#-23,2(R4)
-				mov.b	#-78,3(R4)
- 				mov.b	#32,4(R4)
-				mov.b	#89,5(R4)
-				mov.b	#-19,6(R4)
-				mov.b	#-99,7(R4)
-				mov.b	#73,8(R4)
-				mov.b	#-18,9(R4)
-				mov.b	#56,10(R4)
-
+				.global nop_value,br_base,free_address,checkpoint_buffer,update_avail,rx_buffer,data_address,sizerx,init,check_update
+												; benchmark
+;				.global math,matrix
 setup_gpio     	bic.b   #BIT0,&P1OUT            ; clear P1.0 output latch for a defined power-on state
             	bis.b   #BIT0,&P1DIR            ; set P1.0 to output direction
 		     	bic.b   #BIT1,&P1OUT            ; clear P1.1 output latch for a defined power-on state
             	bis.b   #BIT1,&P1DIR            ; set P1.1 to output direction
 unlock_gpio  	bic.w   #LOCKLPM5,&PM5CTL0      ; disable the GPIO power-on default high-impedance mode to activate
                                             	; previously configured port settings
-                                            	; check pointing setup
-setup_adc12  	mov.w   #ADC12SHT0_2+ADC12ON,&ADC12CTL0 ; 16x
-            	bis.w   #ADC12SHP,&ADC12CTL1    ; ADCCLK = MODOSC; sampling timer
-            	bis.w   #ADC12RES_2,&ADC12CTL2  ; 12-bit conversion results
-            	bis.w   #ADC12INCH_2,&ADC12MCTL0; A2 ADC input select; Vref=AVCC
-            	bis.w   #ADC12IE0,&ADC12IER0    ; Enable ADC conv complete interrupt
-setup_timer     mov.w   #CCIE,&TA0CCTL0         ; TACCR0 interrupt enabled
-            	mov.w   #50000,&TA0CCR0
-            	mov.w   #TASSEL__SMCLK+MC__CONTINOUS,&TA0CTL  ; SMCLK, continuous mode
-            	nop
-            	bis.w   #GIE,SR            		; Enable interrupt
-            	nop                             ; for debug
+;setup_adc12  	mov.w   #ADC12SHT0_2+ADC12ON,&ADC12CTL0 ; 16x
+;            	bis.w   #ADC12SHP,&ADC12CTL1    ; ADCCLK = MODOSC; sampling timer
+;            	bis.w   #ADC12RES_2,&ADC12CTL2  ; 12-bit conversion results
+;            	bis.w   #ADC12INCH_2,&ADC12MCTL0; A2 ADC input select; Vref=AVCC
+;            	bis.w   #ADC12IE0,&ADC12IER0    ; Enable ADC conv complete interrupt
+;setup_timer     mov.w   #CCIE,&TA0CCTL0         ; TACCR0 interrupt enabled
+;            	mov.w   #50000,&TA0CCR0
+;            	mov.w   #TASSEL__SMCLK+MC__CONTINOUS,&TA0CTL  ; SMCLK, continuous mode
+;            	nop
+;            	bis.w   #GIE,SR            		; Enable interrupt
+;            	nop                             ; for debug
+				call 	#init
 
-
-_loop			call 	#math					; benchmark math
-				;call	#matrix					; benchmark matrix
-				;call	#sort					; benchmark sort
+_loop			call 	#math					; benchmark
+				call	#matrix
 				call 	#check_update
     			cmp.b 	#0x01,update_avail     	; compare with #1 value
-    			jnz 	_loop_l1      	 		; repeat loop if not equal
+    			jnz 	_loop      	 			; repeat loop if not equal
 				call 	#decode_update
-				xor.b 	#BIT1,&P1OUT
-_loop_l1		call	#wait
 				jmp 	_loop
 
 ;--------------------------------------------------
@@ -523,9 +510,9 @@ TIMER0_A0_ISR									; Timer0_A3 CC0 Interrupt Service Routine
 
 ;---------------------------------------------------------------------
 ; benchmark
-math:											; math benchmark
+math:
  												; 8 bits math
-math_8			mov.b	#0x02,R13				; multiplication
+				mov.b	#0x02,R13				; multiplication
  				mov.b	#0x04,R12
  				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
  				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
@@ -538,9 +525,9 @@ math_8			mov.b	#0x02,R13				; multiplication
  				add.b   R13,R12
  				mov.b	#0x03,R13				; substraction
  				mov.b	#0x0C,R12
- 				sub.b	R13,R12					; instruction size = 1 word
- 												; 16 bits math (insert, delete section)
-math_16			mov.w	#0x1002,R13				; multiplication
+ 				sub.b	R13,R12
+ 												; 16 bits math
+				mov.w	#0x1002,R13				; multiplication
  				mov.w	#0x0003,R12
  				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
  				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
@@ -554,9 +541,8 @@ math_16			mov.w	#0x1002,R13				; multiplication
  				mov.w	#0x2009,R13				; substraction
  				mov.w	#0x610A,R12
  				sub.w	R13,R12
-				;xor.b 	#BIT1,&P1OUT 			; Toggle P1.1, Green LED, use for testing checkpointing, restore update, etc...
  												; 32 bits math
-math_32			mov.w   #0x0075,R14				; multiplication
+				mov.w   #0x0075,R14				; multiplication
  				mov.w   #0x00A8,R15
  				mov.w   #0x00E7,R12
  				mov.w   #0x0038,R13
@@ -582,129 +568,92 @@ math_32			mov.w   #0x0075,R14				; multiplication
  				mov.w   #0x4035,R13
  				sub.w	R14,R12
  				subc.w	R15,R13
+
 math_end		ret
 
 ; mamul assembly example: https://github.com/khairanabila/nab-NN
 ;https://github.com/AgentANAKIN/Gender-Predictor-Neural-Network-in-C/blob/master/gpnnc.c
-matrix:											; martix benchmark
-				mov.w	#MX1_RAM,R4
-				mov.w	#MX2_RAM,R5
-				mov.w	#MX1_FRAM,R6
-				mov.w	#MX2_FRAM,R7
-matrix_load		mov.w	0(R6),0(R4)				; matrix 1
-				mov.w	2(R6),2(R4)
-				mov.w	4(R6),4(R4)
-				mov.w	6(R6),6(R4)
-				mov.w	8(R6),8(R4)
-				mov.w	10(R6),10(R4)
-				mov.w	12(R6),12(R4)
-				mov.w	14(R6),14(R4)
-				mov.w	16(R6),16(R4)
-				mov.w	18(R6),18(R4)
-				mov.w	20(R6),20(R4)
-				mov.w	22(R6),22(R4)
-				mov.w	24(R6),24(R4)
-				mov.w	26(R6),26(R4)
-				mov.w	28(R6),28(R4)
-				mov.w	30(R6),30(R4)
-				mov.w	32(R6),32(R4)
-				mov.w	34(R6),34(R4)
-				mov.w	36(R6),36(R4)
-				mov.w	38(R6),38(R4)
-				mov.w	40(R6),40(R4)
-				mov.w	42(R6),42(R4)
-				mov.w	44(R6),44(R4)
-				mov.w	46(R6),46(R4)
-				mov.w	48(R6),48(R4)
-				mov.w	0(R7),0(R5)				; matrix 2
-				mov.w	2(R7),2(R5)
-				mov.w	4(R7),4(R5)
-				mov.w	6(R7),6(R5)
-				mov.w	8(R7),8(R5)
-				mov.w	10(R7),10(R5)
-				mov.w	12(R7),12(R5)
-				mov.w	14(R7),14(R5)
-				mov.w	16(R7),16(R5)
-				mov.w	18(R7),18(R5)
-				mov.w	20(R7),20(R5)
-				mov.w	22(R7),22(R5)
-				mov.w	24(R7),24(R5)
-				mov.w	26(R7),26(R5)
-				mov.w	28(R7),28(R5)
-				mov.w	30(R7),30(R5)
-				mov.w	32(R7),32(R5)
-				mov.w	34(R7),34(R5)
-				mov.w	36(R7),36(R5)
-				mov.w	38(R7),38(R5)
-				mov.w	40(R7),40(R5)
-				mov.w	42(R7),42(R5)
-				mov.w	44(R7),44(R5)
-				mov.w	46(R7),46(R5)
-				mov.w	48(R7),48(R5)
+matrix:
+												; matrix 1
+				mov.w	#0x0005,data_address	; m1_row
+				mov.w	#0x0005,data_address+2	; m1_col
+				mov.w	#0x0099,data_address+4
+				mov.w	#0x0056,data_address+6
+				mov.w	#0x0090,data_address+8
+				mov.w	#0x0034,data_address+10
+				mov.w	#0x0078,data_address+12
+				mov.w	#0x0012,data_address+14
+				mov.w	#0x0056,data_address+16
+				mov.w	#0x0090,data_address+18
+				mov.w	#0x0034,data_address+20
+				mov.w	#0x0078,data_address+22
+				mov.w	#0x0012,data_address+24
+				mov.w	#0x0056,data_address+26
+				mov.w	#0x0090,data_address+28
+				mov.w	#0x0034,data_address+30
+				mov.w	#0x0078,data_address+32
+				mov.w	#0x0012,data_address+34
+				mov.w	#0x0012,data_address+36
+				mov.w	#0x0056,data_address+38
+				mov.w	#0x0090,data_address+40
+				mov.w	#0x0034,data_address+42
+				mov.w	#0x0078,data_address+44
+				mov.w	#0x0012,data_address+46
+				mov.w	#0x0056,data_address+48
+				mov.w	#0x0090,data_address+50
+				mov.w	#0x0034,data_address+52
+												; matrix 2
+				mov.w	#0x0005,data_address+54	; m1_row
+				mov.w	#0x0005,data_address+56	; m1_col
+				mov.w	#0x0099,data_address+58
+				mov.w	#0x0056,data_address+60
+				mov.w	#0x0090,data_address+62
+				mov.w	#0x0034,data_address+64
+				mov.w	#0x0078,data_address+66
+				mov.w	#0x0012,data_address+68
+				mov.w	#0x0056,data_address+70
+				mov.w	#0x0090,data_address+72
+				mov.w	#0x0034,data_address+74
+				mov.w	#0x0078,data_address+76
+				mov.w	#0x0012,data_address+78
+				mov.w	#0x0056,data_address+80
+				mov.w	#0x0090,data_address+82
+				mov.w	#0x0034,data_address+84
+				mov.w	#0x0078,data_address+86
+				mov.w	#0x0012,data_address+88
+				mov.w	#0x0012,data_address+90
+				mov.w	#0x0056,data_address+92
+				mov.w	#0x0090,data_address+94
+				mov.w	#0x0034,data_address+96
+				mov.w	#0x0078,data_address+98
+				mov.w	#0x0012,data_address+100
+				mov.w	#0x0056,data_address+102
+				mov.w	#0x0090,data_address+104
+				mov.w	#0x0034,data_address+106
+
 												; matrix copy
-				mov.w	#25,R6
-matrix_l1		cmp		#0,R6					; copy done?
-				mov.w	0(R4),0(R5)
-				add		#2,R4
-				add		#2,R5
+		       	mov.w 	data_address,R4			; matrix 1 start address
+				mov.w	data_address+54,R5		; matrix 2 start address
+				mov.w	R4,R6
+matrix_l1		cmp		R6,R5					; copy done?
+				push.b	0(R6)
 				dec		R6
 				jnz 	matrix_l1      	 		; jump if not equal
 												; matrix addition
-				mov.w	#MX1_RAM,R4
-				mov.w	#MX2_RAM,R5
-				mov.w	#25,R6					; R7 matrix 2
-matrix_l2		cmp		#0,R6					; addition done?
-				add		0(R4),0(R5)				; add matrix 1 to matrix 2
-				add		#2,R4
-				add		#2,R5
+				mov.w	R4,R6					; R6 matrix 1
+				mov.w	R5,R7					; R7 matrix 2
+matrix_l2		mov.b	0(R6),R8
+				mov.b	0(R7),R9
+				add.b	R8,R9
+				mov.w	R9,0(R7)				; store result to matrix 2
 				dec		R6
-				jnz 	matrix_l1      	 		; jump if not equal
+				dec		R7
+				cmp		R6,R5
+				jnz		matrix_l2				; jump if equal
+
+				.text
 matrix_end		ret
 
-sort:											; bubble sort algorithm benchmark
-				mov.w	#ARY_RAM,R4
-				mov.w	#ARY_FRAM,R5
-				mov.w	#ARYS,R6
-ary_load		mov.b	0(R5),0(R4)				; load ary
-				mov.b	1(R5),1(R4)
-				mov.b	2(R5),2(R4)
-				mov.b	3(R5),3(R4)
- 				mov.b	4(R5),4(R4)
-				mov.b	5(R5),5(R4)
-				mov.b	6(R5),6(R4)
-				mov.b	7(R5),7(R4)
-				mov.b	8(R5),8(R4)
-				mov.b	9(R5),9(R4)
-				mov.b	10(R5),10(R4)
-sort_copy		mov.b	0(R4),R7
-				inc.w	R7 						; off by one fix
-				mov.w	R4,R8 					; R8 pointer to extract data
-				mov.w	R6,R9 					; R9 pointer to insert data
-sort_copy_l1	mov.b	@R8+,0(R9) 				; shift elem
-				inc.w	R9
-				dec.w	R7
-				jnz		sort_copy_l1
-sorting			mov.b	0(R4),R7 				; i (outer)
-				dec.w	R7
-OUTER_LOOP:		mov.b	0(R4),R8 				; j (inner)
-				sub.w	R11,R8 					; prevent un-necessary amount of iterations
-				dec.w	R8
-				mov.w	R6,R9 					; reset R9 pointer to the start R9[0]
-				inc.w	R9 	   					; shift R9 to *(R6+1) in the interest of not removing the size component of the arr
-INNER_LOOP:		cmp.b	@R9+,0(R9) 				; gets R9[i] than increments making the next elem R9[++i]
-				jge 	IL_SENTINEL
-												; handle a swap
-				mov.b	-1(R9),	R10
-				mov.b	0(R9),-1(R9)
-				mov.b	R10,0(R9)
-IL_SENTINEL:
-				dec.w	R8
-				jnz		INNER_LOOP 				; if it is zero than you decrement the outer look sentinel now
-												; if it is zero, increment R11 by 1 to do less iterations since you know one position is sorted correctly now
-				inc.w	R11
-				dec.w	R7
-				jnz		OUTER_LOOP
-				ret
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
 ;-------------------------------------------------------------------------------
