@@ -27,7 +27,7 @@ static const uint8_t rfPowerTable[] = {
 	/* 5 dBm */		0x84, // 19.4 mA
 	/* 0 dBm */		0x60, // 15.9 mA
 	/* -10 dBm */	0x34, // 14.4 mA
-	/* -15 dBm */	0x1D, // 13.1 mAsiz
+	/* -15 dBm */	0x1D, // 13.1 mA
 	/* -20 dBm */	0x0E, // 12.4 mA
 	/* -30 dBm */	0x12, // 11.9 mA
 };

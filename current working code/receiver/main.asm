@@ -25,67 +25,6 @@
 ; example: br 0x5000 (0x4030 0x5000)
 ; jump to address 0x5000
 
-;--------------------------------------------------------------------------------
-; Assembly math benchmark (currently not used)
-; benchmarks:
-; 												; 8 bits math
-; m8			mov.b	#0x02,R13				; multiplication
-; 				mov.b	#0x04,R12
-; 				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
-; 				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
-; 				mov.w   &MPY32_RESLO,R12		; move result into return register
-; 				mov.b	#0x24,R13				; division
-; 				mov.b	#0x04,R14
-; 				call 	#div
-; 				mov.b	#0x03,R13				; addition
-; 				mov.b	#0x0C,R12
-; 				add.b   R13,R12
-; 				mov.b	#0x03,R13				; substraction
-; 				mov.b	#0x0C,R12
-; 				sub.b	R13,R12
-; 												; 16 bits math
-; m16			mov.w	#0x1002,R13				; multiplication
-; 				mov.w	#0x0003,R12
-; 				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
-; 				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
-; 				mov.w   &MPY32_RESLO,R12		; move result into return register
-; 				mov.w	#0x3024,R13				; division
-; 				mov.w	#0x0003,R14
-; 				call 	#div
-; 				mov.w	#0x2133,R13				; addition
-; 				mov.w	#0x1CA0,R12
-; 				add.w   R13,R12
-; 				mov.w	#0x2009,R13				; substraction
-; 				mov.w	#0x610A,R12
-; 				sub.w	R13,R12
-; 												; 32 bits math
-; m32			mov.w   #0x0075,R14				; multiplication
-; 				mov.w   #0x00A8,R15
-; 				mov.w   #0x00E7,R12
-; 				mov.w   #0x0038,R13
-; 				mov.w   R12,&MPY32_MPY32L		; load operand 1 Low into multiplier
-; 				mov.w   R13,&MPY32_MPY32H		; load operand 1 High into multiplier
-; 				mov.w   R14,&MPY32_OP2L			; load operand 2 Low into multiplier
-; 				mov.w   R15,&MPY32_OP2H			; load operand 2 High, trigger MPY
-; 				mov.w   &MPY32_RES0,R12			; ready low 16-bits for return
-; 				mov.w   &MPY32_RES1,R13			; ready high 16-bits for return
-; 				mov.w   #0x1000,R12				; division
-; 				mov.w   #0x1116,R13
-; 				mov.w   #0x000A,R14
-; 				call	#div
-; 				mov.w   #0x1000,R14				; addition
-; 				mov.w   #0x0116,R15
-; 				mov.w   #0x000A,R12
-; 				mov.w   #0x0038,R13
-; 				add.w   R14,R12
-; 				addc.w  R15,R13
-; 				mov.w   #0x0305,R14				; substraction
-; 				mov.w   #0x10CA,R15
-; 				mov.w   #0x3002,R12
-; 				mov.w   #0x4035,R13
-; 				sub.w	R14,R12
-; 				subc.w	R15,R13
-
 ;-------------------------------------------------------------------------------
             	.cdecls C,LIST,"msp430.h"       ; Include device header file
             
@@ -110,59 +49,102 @@ StopWDT     	mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 
 _main
 
-MPY32_MPY 		.equ 	0x04C0
-MPY32_OP2		.equ 	0x04C8
-MPY32_RESLO		.equ 	0x04CA
-MPY32_MPY32L	.equ    0x04D0
-MPY32_MPY32H	.equ    0x04D2
-MPY32_OP2L		.equ	0x04E0
-MPY32_OP2H		.equ	0x04E2
-MPY32_RES0		.equ	0x04E4
-MPY32_RES1		.equ	0x04E6
-
+MPY32_MPY 		.set 	0x04C0
+MPY32_OP2		.set 	0x04C8
+MPY32_RESLO		.set 	0x04CA
+MPY32_MPY32L	.set    0x04D0
+MPY32_MPY32H	.set    0x04D2
+MPY32_OP2L		.set	0x04E0
+MPY32_OP2H		.set	0x04E2
+MPY32_RES0		.set	0x04E4
+MPY32_RES1		.set	0x04E6
+NOP_VAL 		.set	0x0343
+BR_BASE 		.set	0x4030
+MX1				.set	0x5000
+MX2				.set	0x5070
 ;-------------------------------------------------------------------------------
 ; Variable Definitions
-; 1. nop_value: raw value for nop instruction
-; 2. br_base: the first word value for branch instruction
-; 3. free_address: the starting address of free memory space
-; 4. update_avail: 1: update packet available in rx_buffer
-; 5. sizerx: the size of update packet stored in rx_buffer in bytes
-; 6. rx_buffer: stored received update packet
-; 7. data_address: the start address to store matrix data
-; 8. init: initialize wireless communication
-; 9. check_update: check if there is an update available
-;    byte 0: opcode
-;	 byte 1: destination address lower 8 bits
-;	 byte 2: destination address higher 8 bits
-;	 byte 3: length of the following update data in words(16 bits)
-; 	 byte 4: update data 0 lower 8 bits
-;	 byte 5: update data 0 higher 8 bits
-;	 ...
+; 1. free_address: the starting address of free memory space
+; 2. update_avail: 1: update packet available in rx_buffer
+; 3. sizerx: the size of update packet stored in rx_buffer in bytes
+; 4. rx_buffer: stored received update packet
+; 5. init: initialize wireless communication
+; 6. check_update: check if there is an update available
 
 _init
 				.text
 												; all the variables used in assembly is defined in C++ to
 												; avoid compiler SRAM overwrite issue between C++ and assembly
-				.global nop_value,br_base,free_address,checkpoint_buffer,update_avail,rx_buffer,data_address,sizerx,init,check_update
-												; benchmark
-;				.global math,matrix
+				.global free_address,checkpoint_buffer,update_avail,rx_buffer,sizerx,init,check_update
+				mov.w	#MX1,R4					; matrix 1 init
+				mov.w	#0x0099,0(R4)
+				mov.w	#0x0056,2(R4)
+				mov.w	#0x0090,4(R4)
+				mov.w	#0x0034,6(R4)
+				mov.w	#0x0078,8(R4)
+				mov.w	#0x0012,10(R4)
+				mov.w	#0x0056,12(R4)
+				mov.w	#0x0090,14(R4)
+				mov.w	#0x0034,16(R4)
+				mov.w	#0x0078,18(R4)
+				mov.w	#0x0012,20(R4)
+				mov.w	#0x0056,22(R4)
+				mov.w	#0x0090,24(R4)
+				mov.w	#0x0034,26(R4)
+				mov.w	#0x0078,28(R4)
+				mov.w	#0x0012,30(R4)
+				mov.w	#0x0012,32(R4)
+				mov.w	#0x0056,34(R4)
+				mov.w	#0x0090,36(R4)
+				mov.w	#0x0034,38(R4)
+				mov.w	#0x0078,40(R4)
+				mov.w	#0x0012,42(R4)
+				mov.w	#0x0056,44(R4)
+				mov.w	#0x0090,46(R4)
+				mov.w	#0x0034,48(R4)
+				mov.w	#MX2,R4					; matrix 2 init
+				mov.w	#0x0099,0(R4)
+				mov.w	#0x0056,2(R4)
+				mov.w	#0x0090,4(R4)
+				mov.w	#0x0034,6(R4)
+				mov.w	#0x0078,8(R4)
+				mov.w	#0x0012,10(R4)
+				mov.w	#0x0056,12(R4)
+				mov.w	#0x0090,14(R4)
+				mov.w	#0x0034,16(R4)
+				mov.w	#0x0078,18(R4)
+				mov.w	#0x0012,20(R4)
+				mov.w	#0x0056,22(R4)
+				mov.w	#0x0090,24(R4)
+				mov.w	#0x0034,26(R4)
+				mov.w	#0x0078,28(R4)
+				mov.w	#0x0012,30(R4)
+				mov.w	#0x0012,32(R4)
+				mov.w	#0x0056,34(R4)
+				mov.w	#0x0090,36(R4)
+				mov.w	#0x0034,38(R4)
+				mov.w	#0x0078,40(R4)
+				mov.w	#0x0012,42(R4)
+				mov.w	#0x0056,44(R4)
+				mov.w	#0x0090,46(R4)
+				mov.w	#0x0034,48(R4)
 setup_gpio     	bic.b   #BIT0,&P1OUT            ; clear P1.0 output latch for a defined power-on state
             	bis.b   #BIT0,&P1DIR            ; set P1.0 to output direction
 		     	bic.b   #BIT1,&P1OUT            ; clear P1.1 output latch for a defined power-on state
             	bis.b   #BIT1,&P1DIR            ; set P1.1 to output direction
 unlock_gpio  	bic.w   #LOCKLPM5,&PM5CTL0      ; disable the GPIO power-on default high-impedance mode to activate
                                             	; previously configured port settings
-;setup_adc12  	mov.w   #ADC12SHT0_2+ADC12ON,&ADC12CTL0 ; 16x
-;            	bis.w   #ADC12SHP,&ADC12CTL1    ; ADCCLK = MODOSC; sampling timer
-;            	bis.w   #ADC12RES_2,&ADC12CTL2  ; 12-bit conversion results
-;            	bis.w   #ADC12INCH_2,&ADC12MCTL0; A2 ADC input select; Vref=AVCC
-;            	bis.w   #ADC12IE0,&ADC12IER0    ; Enable ADC conv complete interrupt
-;setup_timer     mov.w   #CCIE,&TA0CCTL0         ; TACCR0 interrupt enabled
-;            	mov.w   #50000,&TA0CCR0
-;            	mov.w   #TASSEL__SMCLK+MC__CONTINOUS,&TA0CTL  ; SMCLK, continuous mode
-;            	nop
-;            	bis.w   #GIE,SR            		; Enable interrupt
-;            	nop                             ; for debug
+setup_adc12  	mov.w   #ADC12SHT0_2+ADC12ON,&ADC12CTL0 ; 16x
+            	bis.w   #ADC12SHP,&ADC12CTL1    ; ADCCLK = MODOSC; sampling timer
+            	bis.w   #ADC12RES_2,&ADC12CTL2  ; 12-bit conversion results
+            	bis.w   #ADC12INCH_2,&ADC12MCTL0; A2 ADC input select; Vref=AVCC
+            	bis.w   #ADC12IE0,&ADC12IER0    ; Enable ADC conv complete interrupt
+setup_timer     mov.w   #CCIE,&TA0CCTL0         ; TACCR0 interrupt enabled
+            	mov.w   #50000,&TA0CCR0
+            	mov.w   #TASSEL__SMCLK+MC__CONTINOUS,&TA0CTL  ; SMCLK, continuous mode
+            	nop
+            	bis.w   #GIE,SR            		; Enable interrupt
+            	nop                             ; for debug
 				call 	#init
 
 _loop			call 	#math					; benchmark
@@ -229,7 +211,7 @@ insert											; load values to registers
 												; backup memory at inserting point and replace with branch instruction at
 												; inserting point
 				mov.w	0(R8),0(R5)				; copy
-				mov.w	br_base,0(R8)			; write the branch instruction first word
+				mov.w	#BR_BASE,0(R8)			; write the branch instruction first word
 				mov.w	2(R8),2(R5)				; copy
 				mov.w	R5,2(R8)				; write the branch instruction second word
 				add.w	#4,R5					; increment free memory start address
@@ -239,7 +221,7 @@ insert											; load values to registers
 insert_l1		cmp 	#0,R9    				; compare with value
 				jz 		insert_l2      	 		; jump if equal
 				mov.w	0(R8),0(R5)				; copy
-				mov.w	nop_value,0(R8)			; write nop instruction
+				mov.w	#NOP_VAL,0(R8)			; write nop instruction
 				add.w	#2,R5					; increment free memory start address
 				add.w	#2,R8					; increment destination address
 				dec.w   R9                     	; decrement R9
@@ -253,7 +235,7 @@ insert_l2		cmp		#0,R7					; update done?
 				dec.w   R7                   	; decrement R7
 				jmp		insert_l2
 												; write branch instruction jump back to the original code space
-insert_l3		mov.w	br_base,0(R5)			; write the branch instruction first word
+insert_l3		mov.w	#BR_BASE,0(R5)			; write the branch instruction first word
 				mov.w	R8,2(R5)				; write the branch instruction second word
 				add.w	#4,R5
 												; update free address
@@ -289,14 +271,14 @@ modify_l1		cmp 	#0,R9    				; compare with value
 												; check if need to copy to new allocated memory
 				cmp		#0,R7					; modify done?
 				jz 		modify_l2      	 		; jump if equal
-				mov.w	br_base,0(R8)			; write the branch instruction first word
+				mov.w	#BR_BASE,0(R8)			; write the branch instruction first word
 				mov.w	R5,2(R8)				; write the branch instruction second word
 				add.w	#4,R8					; update R8
 				sub.w   #2,R4                   ; update R4
 												; backup the rest of unused memory and replace with nop instruction
 modify_l2		cmp 	#0,R4    				; compare with value
 				jz 		modify_l3      	 		; jump if equal
-				mov.w	nop_value,0(R8)			; write nop instruction
+				mov.w	#NOP_VAL,0(R8)			; write nop instruction
 				add.w	#2,R8					; increment destination address
 				dec.w   R4                     	; decrement R4
 				jmp		modify_l2
@@ -309,7 +291,7 @@ modify_l3		cmp		#0,R7					; modify done?
 				dec.w   R7                   	; decrement R7
 				jmp		modify_l3
 												; write branch instruction jump back to the original code space
-modify_l4		mov.w	br_base,0(R5)			; write the branch instruction first word
+modify_l4		mov.w	#BR_BASE,0(R5)			; write the branch instruction first word
 				mov.w	R8,2(R5)				; write the branch instruction second word
 				add.w	#4,R5
 												; update free address
@@ -329,13 +311,13 @@ delete											; load values to registers
 	   			mov.w	R7,R6
 	   			rla.w	R6						; multiply by 2 (length is in words)
 	   			add.w	R8,R6
-				mov.w	br_base,0(R8)			; write the branch instruction first word
+				mov.w	#BR_BASE,0(R8)			; write the branch instruction first word
 				mov.w	R6,2(R8)				; write the branch instruction second word
 				add.w	#4,R8
 				sub.w	#2,R7
 delete_l1		cmp 	#0,R7    				; delete done?
 				jz 		delete_l2      	 		; jump if equal
-				mov.w	nop_value,0(R8)			; write nop instruction
+				mov.w	#NOP_VAL,0(R8)			; write nop instruction
 				add.w	#2,R8					; increment destination address
 				dec.w   R7                     	; decrement R7
 				jmp		delete_l1
@@ -574,84 +556,111 @@ math_end		ret
 ; mamul assembly example: https://github.com/khairanabila/nab-NN
 ;https://github.com/AgentANAKIN/Gender-Predictor-Neural-Network-in-C/blob/master/gpnnc.c
 matrix:
-												; matrix 1
-				mov.w	#0x0005,data_address	; m1_row
-				mov.w	#0x0005,data_address+2	; m1_col
-				mov.w	#0x0099,data_address+4
-				mov.w	#0x0056,data_address+6
-				mov.w	#0x0090,data_address+8
-				mov.w	#0x0034,data_address+10
-				mov.w	#0x0078,data_address+12
-				mov.w	#0x0012,data_address+14
-				mov.w	#0x0056,data_address+16
-				mov.w	#0x0090,data_address+18
-				mov.w	#0x0034,data_address+20
-				mov.w	#0x0078,data_address+22
-				mov.w	#0x0012,data_address+24
-				mov.w	#0x0056,data_address+26
-				mov.w	#0x0090,data_address+28
-				mov.w	#0x0034,data_address+30
-				mov.w	#0x0078,data_address+32
-				mov.w	#0x0012,data_address+34
-				mov.w	#0x0012,data_address+36
-				mov.w	#0x0056,data_address+38
-				mov.w	#0x0090,data_address+40
-				mov.w	#0x0034,data_address+42
-				mov.w	#0x0078,data_address+44
-				mov.w	#0x0012,data_address+46
-				mov.w	#0x0056,data_address+48
-				mov.w	#0x0090,data_address+50
-				mov.w	#0x0034,data_address+52
-												; matrix 2
-				mov.w	#0x0005,data_address+54	; m1_row
-				mov.w	#0x0005,data_address+56	; m1_col
-				mov.w	#0x0099,data_address+58
-				mov.w	#0x0056,data_address+60
-				mov.w	#0x0090,data_address+62
-				mov.w	#0x0034,data_address+64
-				mov.w	#0x0078,data_address+66
-				mov.w	#0x0012,data_address+68
-				mov.w	#0x0056,data_address+70
-				mov.w	#0x0090,data_address+72
-				mov.w	#0x0034,data_address+74
-				mov.w	#0x0078,data_address+76
-				mov.w	#0x0012,data_address+78
-				mov.w	#0x0056,data_address+80
-				mov.w	#0x0090,data_address+82
-				mov.w	#0x0034,data_address+84
-				mov.w	#0x0078,data_address+86
-				mov.w	#0x0012,data_address+88
-				mov.w	#0x0012,data_address+90
-				mov.w	#0x0056,data_address+92
-				mov.w	#0x0090,data_address+94
-				mov.w	#0x0034,data_address+96
-				mov.w	#0x0078,data_address+98
-				mov.w	#0x0012,data_address+100
-				mov.w	#0x0056,data_address+102
-				mov.w	#0x0090,data_address+104
-				mov.w	#0x0034,data_address+106
-
+												; matrix load into ram
+				mov.w	#MX1,R4					; ram address around 0x2bfc
+				mov.w	0(R4),-2(SP)			; temperory use stack, results will be discarded
+				mov.w	0(R4),-4(SP)
+				mov.w	0(R4),-6(SP)
+				mov.w	0(R4),-8(SP)
+				mov.w	0(R4),-10(SP)
+				mov.w	0(R4),-12(SP)
+				mov.w	0(R4),-14(SP)
+				mov.w	0(R4),-16(SP)
+				mov.w	0(R4),-18(SP)
+				mov.w	0(R4),-20(SP)
+				mov.w	0(R4),-22(SP)
+				mov.w	0(R4),-24(SP)
+				mov.w	0(R4),-26(SP)
+				mov.w	0(R4),-28(SP)
+				mov.w	0(R4),-30(SP)
+				mov.w	0(R4),-32(SP)
+				mov.w	0(R4),-34(SP)
+				mov.w	0(R4),-36(SP)
+				mov.w	0(R4),-38(SP)
+				mov.w	0(R4),-40(SP)
+				mov.w	0(R4),-42(SP)
+				mov.w	0(R4),-44(SP)
+				mov.w	0(R4),-46(SP)
+				mov.w	0(R4),-48(SP)
+				mov.w	0(R4),-50(SP)
+				mov.w	#MX2,R4
+				mov.w	0(R4),-52(SP)
+				mov.w	0(R4),-54(SP)
+				mov.w	0(R4),-56(SP)
+				mov.w	0(R4),-58(SP)
+				mov.w	0(R4),-60(SP)
+				mov.w	0(R4),-62(SP)
+				mov.w	0(R4),-64(SP)
+				mov.w	0(R4),-66(SP)
+				mov.w	0(R4),-68(SP)
+				mov.w	0(R4),-70(SP)
+				mov.w	0(R4),-72(SP)
+				mov.w	0(R4),-74(SP)
+				mov.w	0(R4),-76(SP)
+				mov.w	0(R4),-78(SP)
+				mov.w	0(R4),-80(SP)
+				mov.w	0(R4),-82(SP)
+				mov.w	0(R4),-84(SP)
+				mov.w	0(R4),-86(SP)
+				mov.w	0(R4),-88(SP)
+				mov.w	0(R4),-90(SP)
+				mov.w	0(R4),-92(SP)
+				mov.w	0(R4),-94(SP)
+				mov.w	0(R4),-96(SP)
+				mov.w	0(R4),-98(SP)
+				mov.w	0(R4),-100(SP)
 												; matrix copy
-		       	mov.w 	data_address,R4			; matrix 1 start address
-				mov.w	data_address+54,R5		; matrix 2 start address
-				mov.w	R4,R6
-matrix_l1		cmp		R6,R5					; copy done?
-				push.b	0(R6)
-				dec		R6
-				jnz 	matrix_l1      	 		; jump if not equal
+		       	mov.w 	-2(SP),-52(SP)
+		       	mov.w 	-4(SP),-54(SP)
+		       	mov.w 	-6(SP),-56(SP)
+		       	mov.w 	-8(SP),-58(SP)
+		       	mov.w 	-10(SP),-60(SP)
+		       	mov.w 	-12(SP),-62(SP)
+		       	mov.w 	-14(SP),-64(SP)
+		       	mov.w 	-16(SP),-66(SP)
+		       	mov.w 	-18(SP),-68(SP)
+		       	mov.w 	-20(SP),-70(SP)
+		       	mov.w 	-22(SP),-72(SP)
+		       	mov.w 	-24(SP),-74(SP)
+		       	mov.w 	-26(SP),-76(SP)
+		       	mov.w 	-28(SP),-78(SP)
+		       	mov.w 	-30(SP),-80(SP)
+		       	mov.w 	-32(SP),-82(SP)
+		       	mov.w 	-34(SP),-84(SP)
+		       	mov.w 	-36(SP),-86(SP)
+		       	mov.w 	-38(SP),-88(SP)
+		       	mov.w 	-40(SP),-90(SP)
+		       	mov.w 	-42(SP),-92(SP)
+		       	mov.w 	-44(SP),-94(SP)
+		       	mov.w 	-46(SP),-96(SP)
+		       	mov.w 	-48(SP),-98(SP)
+		       	mov.w 	-50(SP),-100(SP)
 												; matrix addition
-				mov.w	R4,R6					; R6 matrix 1
-				mov.w	R5,R7					; R7 matrix 2
-matrix_l2		mov.b	0(R6),R8
-				mov.b	0(R7),R9
-				add.b	R8,R9
-				mov.w	R9,0(R7)				; store result to matrix 2
-				dec		R6
-				dec		R7
-				cmp		R6,R5
-				jnz		matrix_l2				; jump if equal
-
-				.text
+		       	add.w 	-2(SP),-52(SP)
+		       	add.w 	-4(SP),-54(SP)
+		       	add.w 	-6(SP),-56(SP)
+		       	add.w 	-8(SP),-58(SP)
+		       	add.w 	-10(SP),-60(SP)
+		       	add.w 	-12(SP),-62(SP)
+		       	add.w 	-14(SP),-64(SP)
+		       	add.w 	-16(SP),-66(SP)
+		       	add.w 	-18(SP),-68(SP)
+		       	add.w 	-20(SP),-70(SP)
+		       	add.w 	-22(SP),-72(SP)
+		       	add.w 	-24(SP),-74(SP)
+		       	add.w 	-26(SP),-76(SP)
+		       	add.w 	-28(SP),-78(SP)
+		       	add.w 	-30(SP),-80(SP)
+		       	add.w 	-32(SP),-82(SP)
+		       	add.w 	-34(SP),-84(SP)
+		       	add.w 	-36(SP),-86(SP)
+		       	add.w 	-38(SP),-88(SP)
+		       	add.w 	-40(SP),-90(SP)
+		       	add.w 	-42(SP),-92(SP)
+		       	add.w 	-44(SP),-94(SP)
+		       	add.w 	-46(SP),-96(SP)
+		       	add.w 	-48(SP),-98(SP)
+		       	add.w 	-50(SP),-100(SP)
 matrix_end		ret
 
 ;-------------------------------------------------------------------------------
