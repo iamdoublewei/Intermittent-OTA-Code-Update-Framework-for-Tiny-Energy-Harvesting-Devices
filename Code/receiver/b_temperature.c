@@ -104,25 +104,22 @@ extern int temperature(void)
                                             // to settle
     ADC12CTL0 |= ADC12ENC;
 
-    while(1)
-    {
-        ADC12CTL0 |= ADC12SC;               // Sampling and conversion start
+    ADC12CTL0 |= ADC12SC;               // Sampling and conversion start
 
-        __bis_SR_register(GIE);             // interrupts enabled
-        __no_operation();
+    __bis_SR_register(GIE);             // interrupts enabled
+    __no_operation();
 
-        // Temperature in Celsius. See the Device Descriptor Table section in the
-        // System Resets, Interrupts, and Operating Modes, System Control Module
-        // chapter in the device user's guide for background information on the
-        // used formula.
-        temperatureDegC = (float)(((float)temp - CALADC12_12V_30C) * (85 - 30)) /
+    // Temperature in Celsius. See the Device Descriptor Table section in the
+    // System Resets, Interrupts, and Operating Modes, System Control Module
+    // chapter in the device user's guide for background information on the
+    // used formula.
+    temperatureDegC = (float)(((float)temp - CALADC12_12V_30C) * (85 - 30)) /
                 (CALADC12_12V_85C - CALADC12_12V_30C) + 30.0f;
 
-        // Temperature in Fahrenheit Tf = (9/5)*Tc + 32
-        temperatureDegF = temperatureDegC * 9.0f / 5.0f + 32.0f;
+    // Temperature in Fahrenheit Tf = (9/5)*Tc + 32
+    temperatureDegF = temperatureDegC * 9.0f / 5.0f + 32.0f;
 
-        __no_operation();                   // SET BREAKPOINT HERE
-    }
+    __no_operation();                   // SET BREAKPOINT HERE
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -204,23 +201,20 @@ void __attribute__ ((interrupt(ADC12_B_VECTOR))) ADC12ISR (void)
 //                                            // to settle
 //    ADC12CTL0 |= ADC12ENC;
 //
-//    while(1)
-//    {
-//        ADC12CTL0 |= ADC12SC;               // Sampling and conversion start
+//    ADC12CTL0 |= ADC12SC;               // Sampling and conversion start
 //
-//        __bis_SR_register(GIE);             // interrupts enabled
-//        __no_operation();
+//    __bis_SR_register(GIE);             // interrupts enabled
+//    __no_operation();
 //
-//        // Temperature in Celsius. See the Device Descriptor Table section in the
-//        // System Resets, Interrupts, and Operating Modes, System Control Module
-//        // chapter in the device user's guide for background information on the
-//        // used formula.
+//    // Temperature in Celsius. See the Device Descriptor Table section in the
+//    // System Resets, Interrupts, and Operating Modes, System Control Module
+//    // chapter in the device user's guide for background information on the
+//    // used formula.
 //
-//        // Temperature in Fahrenheit Tf = (9/5)*Tc + 32
-//        temperatureDegF = temperatureDegC * 9.0f / 5.0f + 32.0f;
+//    // Temperature in Fahrenheit Tf = (9/5)*Tc + 32
+//    temperatureDegF = temperatureDegC * 9.0f / 5.0f + 32.0f;
 //
-//        __no_operation();                   // SET BREAKPOINT HERE
-//    }
+//    __no_operation();                   // SET BREAKPOINT HERE
 //}
 //
 //#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)

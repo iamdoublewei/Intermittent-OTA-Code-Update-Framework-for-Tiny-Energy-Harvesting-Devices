@@ -136,13 +136,12 @@ MPY32_RES1		.equ	0x04E6
 ;	 byte 5: update data 0 higher 8 bits
 ;	 ...
 
-_init
 				.text
 												; all the variables used in assembly is defined in C++ to
 												; avoid compiler SRAM overwrite issue between C++ and assembly
 				.global nop_value,br_base,free_address,checkpoint_buffer,update_avail,rx_buffer,sizerx,init,check_update
 												; benchmark
-;				.global math,matrix
+				.global timer,temperature,math,matrix,uart
 setup_gpio     	bic.b   #BIT0,&P1OUT            ; clear P1.0 output latch for a defined power-on state
             	bis.b   #BIT0,&P1DIR            ; set P1.0 to output direction
 		     	bic.b   #BIT1,&P1OUT            ; clear P1.1 output latch for a defined power-on state
@@ -162,8 +161,11 @@ unlock_gpio  	bic.w   #LOCKLPM5,&PM5CTL0      ; disable the GPIO power-on defaul
 ;            	nop                             ; for debug
 				call 	#init
 
-_loop			call 	#math					; benchmark
+_loop			call 	#timer					; benchmark
+				call	#temperature
+				call	#math
 				call	#matrix
+				call 	#uart
 				call 	#check_update
     			cmp.b 	#0x01,update_avail     	; compare with #1 value
     			jnz 	_loop      	 			; repeat loop if not equal
@@ -504,216 +506,6 @@ div_l4	    	ret            					;3C
 ;            	bis.w   #ADC12ENC+ADC12SC,&ADC12CTL0 ; Start ADC12 sampling/conversion
 ;            	add.w   #50000,&TA0CCR0         ; Add offset to TA0CCR0
 ;            	reti
-
-;---------------------------------------------------------------------
-; benchmark
-math:
- 												; 8 bits math
-				mov.b	#0x02,R13				; multiplication
- 				mov.b	#0x04,R12
- 				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
- 				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
- 				mov.w   &MPY32_RESLO,R12		; move result into return register
- 				mov.b	#0x24,R13				; division
- 				mov.b	#0x04,R14
-				call 	#div
- 				mov.b	#0x03,R13				; addition
- 				mov.b	#0x0C,R12
- 				add.b   R13,R12
- 				mov.b	#0x03,R13				; substraction
- 				mov.b	#0x0C,R12
- 				sub.b	R13,R12
- 												; 16 bits math
-				mov.w	#0x1002,R13				; multiplication
- 				mov.w	#0x0003,R12
- 				mov.w   R13,&MPY32_MPY			; load operand 1 into multiplier
- 				mov.w   R12,&MPY32_OP2			; load operand 2 which triggers MPY
- 				mov.w   &MPY32_RESLO,R12		; move result into return register
- 				mov.w	#0x3024,R13				; division
- 				mov.w	#0x0003,R14
- 				call 	#div
- 				mov.w	#0x2133,R13				; addition
- 				mov.w	#0x1CA0,R12
- 				add.w   R13,R12
- 				mov.w	#0x2009,R13				; substraction
- 				mov.w	#0x610A,R12
- 				sub.w	R13,R12
- 												; 32 bits math
-				mov.w   #0x0075,R14				; multiplication
- 				mov.w   #0x00A8,R15
- 				mov.w   #0x00E7,R12
- 				mov.w   #0x0038,R13
- 				mov.w   R12,&MPY32_MPY32L		; load operand 1 Low into multiplier
- 				mov.w   R13,&MPY32_MPY32H		; load operand 1 High into multiplier
- 				mov.w   R14,&MPY32_OP2L			; load operand 2 Low into multiplier
- 				mov.w   R15,&MPY32_OP2H			; load operand 2 High, trigger MPY
- 				mov.w   &MPY32_RES0,R12			; ready low 16-bits for return
- 				mov.w   &MPY32_RES1,R13			; ready high 16-bits for return
- 				mov.w   #0x1000,R12				; division
- 				mov.w   #0x1116,R13
- 				mov.w   #0x000A,R14
- 				call	#div
- 				mov.w   #0x1000,R14				; addition
- 				mov.w   #0x0116,R15
- 				mov.w   #0x000A,R12
- 				mov.w   #0x0038,R13
- 				add.w   R14,R12
- 				addc.w  R15,R13
- 				mov.w   #0x0305,R14				; substraction
- 				mov.w   #0x10CA,R15
- 				mov.w   #0x3002,R12
- 				mov.w   #0x4035,R13
- 				sub.w	R14,R12
- 				subc.w	R15,R13
-
-math_end		ret
-
-; mamul assembly example: https://github.com/khairanabila/nab-NN
-;https://github.com/AgentANAKIN/Gender-Predictor-Neural-Network-in-C/blob/master/gpnnc.c
-				.data
-matrix:			;.usect ".matrix",4,2
-				;mov.w	#0x0010,matrix
-				;mov.w	#0x0004,matrix+2
-m1_row			.word	0x0010
-m1_col			.word	0x0004
-m1				.word	0x0012, 0x0056, 0x0090, 0x0034
-    			.word	0x0078, 0x0012, 0x0056, 0x0090
-    			.word	0x0034, 0x0078, 0x0012, 0x0056
-    			.word	0x0090, 0x0034, 0x0078, 0x0012
-    			.word	0x0012, 0x0056, 0x0090, 0x0034
-    			.word	0x0078, 0x0012, 0x0056, 0x0090
-    			.word	0x0034, 0x0078, 0x0012, 0x0056
-    			.word	0x0090, 0x0034, 0x0078, 0x0012
-    			.word	0x0012, 0x0056, 0x0090, 0x0034
-    			.word	0x0078, 0x0012, 0x0056, 0x0090
-   			 	.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-;    			.word	0x0012, 0x0056, 0x0090, 0x0034
-;    			.word	0x0078, 0x0012, 0x0056, 0x0090
-;    			.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-;m2_row			.word	0x0010
-;m2_col			.word	0x0004
-;m2				.word	0x0012, 0x0056, 0x0090, 0x0034
- ;   			.word	0x0078, 0x0012, 0x0056, 0x0090
-;    			.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-;    			.word	0x0012, 0x0056, 0x0090, 0x0034
-;    			.word	0x0078, 0x0012, 0x0056, 0x0090
-;    			.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-;    			.word	0x0012, 0x0056, 0x0090, 0x0034
-;    			.word	0x0078, 0x0012, 0x0056, 0x0090
-;   			 	.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-;    			.word	0x0012, 0x0056, 0x0090, 0x0034
-;    			.word	0x0078, 0x0012, 0x0056, 0x0090
-;    			.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-;m3_row			.word	0x0010
-;m3_col			.word	0x0004
-;m3				.word	0x0012, 0x0056, 0x0090, 0x0034
-;    			.word	0x0078, 0x0012, 0x0056, 0x0090
-;    			.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-;    			.word	0x0012, 0x0056, 0x0090, 0x0034
-;    			.word	0x0078, 0x0012, 0x0056, 0x0090
-;    			.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-;    			.word	0x0012, 0x0056, 0x0090, 0x0034
-;    			.word	0x0078, 0x0012, 0x0056, 0x0090
-;   			 	.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-;    			.word	0x0012, 0x0056, 0x0090, 0x0034
-;    			.word	0x0078, 0x0012, 0x0056, 0x0090
-;    			.word	0x0034, 0x0078, 0x0012, 0x0056
-;    			.word	0x0090, 0x0034, 0x0078, 0x0012
-												; matrix copy
-;		       	mov.w 	SP,R4					; matrix 1 start address
-;				push.b	0x12
-;				push.b 	0x56
-;				push.b	0x90
-;				push.b	0x34
-;				push.b	0x78
-;				push.b	0x12
-;				push.b 	0x56
-;				push.b  0x90
-;				push.b	0x34
-;				push.b	0x78
-;				push.b 	0x12
-;				push.b	0x56
-;				push.b	0x90
-;				push.b 	0x34
-;				push.b 	0x78
-;				push.b 	0x12
-;				push.b 	0x12
-;				push.b 	0x56
-;				push.b 	0x90
-;				push.b 	0x34
-;				push.b	0x78
-;				push.b 	0x12
-;				push.b 	0x56
-;				push.b 	0x90
-;				push.b	0x34
-;				push.b 	0x78
-;				push.b 	0x12
-;				push.b 	0x56
-;				push.b	0x90
-;				push.b 	0x34
-;				push.b 	0x78
-;				push.b 	0x12
-;				push.b	0x12
-;				push.b  0x56
-;				push.b 	0x90
-;				push.b 	0x34
-;				push.b	0x78
-;				push.b 	0x12
-;				push.b 	0x56
-;				push.b 	0x90
-;				push.b	0x34
-;				push.b 	0x78
-;				push.b 	0x12
-;				push.b 	0x56
-;				push.b	0x90
-;				push.b 	0x34
-;				push.b 	0x78
-;				push.b 	0x12
-;				push.b	0x12
-;				push.b 	0x56
-;				push.b 	0x90
-;				push.b 	0x34
-;				push.b	0x78
-;				push.b 	0x12
-;				push.b 	0x56
-;				push.b 	0x90
-;				push.b	0x34
-;				push.b 	0x78
-;				push.b 	0x12
-;				push.b 	0x56
-;				push.b	0x90
-;				push.b 	0x34
-;				push.b 	0x78
-;				push.b 	0x12
-;				mov.w	SP+1,R5					; matrix 2 start address
-;				mov.w	R4,R6
-;matrix_l1		cmp		R6,R5					; copy done?
-;				push.b	0(R6)
-;				dec		R6
-;				jnz 	matrix_l1      	 		; jump if not equal
-;												; matrix addition
-;				mov.w	R4,R6					; R6 matrix 1
-;				mov.w	R5,R7					; R7 matrix 2
-;matrix_l2		mov.b	0(R6),R8
-;				mov.b	0(R7),R9
-;				add.b	R8,R9
-;				mov.w	R9,0(R7)				; store result to matrix 2
-;				dec		R6
-;				dec		R7
-;				cmp		R6,R5
-;				jnz		matrix_l2				; jump if equal
-
-				.text
-matrix_end		ret
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition

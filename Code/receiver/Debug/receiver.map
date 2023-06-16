@@ -1,7 +1,7 @@
 ******************************************************************************
                   MSP430 Linker PC v21.6.1                     
 ******************************************************************************
->> Linked Thu Jun 15 17:25:03 2023
+>> Linked Fri Jun 16 12:49:42 2023
 
 OUTPUT FILE NAME:   <receiver.out>
 ENTRY POINT SYMBOL: "RESET"  address: 00004000
@@ -17,10 +17,10 @@ MEMORY CONFIGURATION
   INFOC                 00001880   00000080  00000000  00000080  RWIX
   INFOB                 00001900   00000080  00000000  00000080  RWIX
   INFOA                 00001980   00000080  00000000  00000080  RWIX
-  RAM                   00001c00   00001000  000000b7  00000f49  RWIX
+  RAM                   00001c00   00001000  00000063  00000f9d  RWIX
   LEARAM                00002c00   00000ec8  00000000  00000ec8  RWIX
   LEASTACK              00003ac8   00000138  00000000  00000138  RWIX
-  FRAM                  00004000   0000bf80  0000085f  0000b721  RWIX
+  FRAM                  00004000   0000bf80  00000d05  0000b27b  RWIX
   JTAGSIGNATURE         0000ff80   00000004  00000004  00000000  RWIX  ffff 
   BSLSIGNATURE          0000ff84   00000004  00000004  00000000  RWIX  ffff 
   IPESIGNATURE          0000ff88   00000008  00000008  00000000  RWIX  ffff 
@@ -113,61 +113,78 @@ section   page    origin      length       input sections
 .init_array 
 *          0    00004000    00000000     UNINITIALIZED
 
-.text      0    00004000    00000826     
-                  00004000    000002fc     main.obj (.text)
-                  000042fc    0000018e     cc1101.obj (.text:_ZN11CC1101Radio17RegConfigSettingsEv)
-                  0000448a    00000058     cc1101.obj (.text:_ZN11CC1101Radio11ReceiveDataEPh)
-                  000044e2    00000046     cc1101.obj (.text:_ZN11CC1101Radio5ResetEv)
-                  00004528    0000003e     cfile.obj (.text:check_update)
-                  00004566    0000003c     cc1101.obj (.text:_ZN11CC1101Radio7SpiInitEv)
-                  000045a2    00000038     cfile.obj (.text:init)
-                  000045da    00000034     cc1101.obj (.text:_ZN11CC1101Radio11SetDataRateEh)
-                  0000460e    00000034     cc1101.obj (.text:_ZN11CC1101Radio15SpiReadBurstRegEhPhh)
-                  00004642    00000034     cc1101.obj (.text:_ZN11CC1101Radio16SpiWriteBurstRegEhPhh)
-                  00004676    0000002e     b_uart.obj (.text:USCI_A3_ISR)
-                  000046a4    00000028     cc1101.obj (.text:_ZN11CC1101Radio17SetLogicalChannelEh)
-                  000046cc    00000024     cc1101.obj (.text:_ZN11CC1101Radio4InitEv)
-                  000046f0    00000022     cc1101.obj (.text:_ZN11CC1101Radio10SpiReadRegEh)
-                  00004712    00000022     cc1101.obj (.text:_ZN11CC1101Radio13SpiReadStatusEh)
-                  00004734    00000022     cc1101.obj (.text:_ZN11CC1101Radio16SpiReadStatusRegEh)
-                  00004756    00000020     cc1101.obj (.text:_ZN11CC1101Radio9RxModeOffEv)
-                  00004776    0000001a     cc1101.obj (.text:_ZN11CC1101Radio11SpiWriteRegEhh)
-                  00004790    00000018     cc1101.obj (.text:_ZN11CC1101Radio11SpiTransferEh)
-                  000047a8    00000016     b_temperature.obj (.text:ADC12ISR)
-                  000047be    00000014     cc1101.obj (.text:_ZN11CC1101Radio16CheckReceiveFlagEv)
-                  000047d2    00000014     cc1101.obj (.text:_ZN11CC1101Radio9SpiStrobeEh)
-                  000047e6    00000010     cc1101.obj (.text:_ZN11CC1101Radio12GetMARCStateEv)
-                  000047f6    00000010     cc1101.obj (.text:_ZN11CC1101Radio4RxOnEv)
-                  00004806    0000000c     b_timer.obj (.text:Timer0_A0_ISR)
-                  00004812    0000000a     cfile.obj (.text:_Z3ledv)
-                  0000481c    0000000a     cc1101.obj (.text:_ZN11CC1101Radio7GDO_SetEv)
+.text      0    00004000    00000c8c     
+                  00004000    00000242     main.obj (.text)
+                  00004242    0000018e     cc1101.obj (.text:_ZN11CC1101Radio17RegConfigSettingsEv)
+                  000043d0    00000132     rts430x_sc_sd_eabi.lib : fs_add.asm.obj (.text)
+                  00004502    000000d8     b_temperature.obj (.text:temperature)
+                  000045da    000000c4     rts430x_sc_sd_eabi.lib : fs_mpy.asm.obj (.text)
+                  0000469e    0000009c                            : fs_div.asm.obj (.text)
+                  0000473a    00000090     b_matrix.obj (.text:matrix)
+                  000047ca    00000058     cc1101.obj (.text:_ZN11CC1101Radio11ReceiveDataEPh)
+                  00004822    00000050     b_uart.obj (.text:uart)
+                  00004872    00000046     cc1101.obj (.text:_ZN11CC1101Radio5ResetEv)
+                  000048b8    0000003e     cfile.obj (.text:check_update)
+                  000048f6    0000003e     b_math.obj (.text:math)
+                  00004934    0000003c     cc1101.obj (.text:_ZN11CC1101Radio7SpiInitEv)
+                  00004970    00000038     cfile.obj (.text:init)
+                  000049a8    00000034     cc1101.obj (.text:_ZN11CC1101Radio11SetDataRateEh)
+                  000049dc    00000034     cc1101.obj (.text:_ZN11CC1101Radio15SpiReadBurstRegEhPhh)
+                  00004a10    00000034     cc1101.obj (.text:_ZN11CC1101Radio16SpiWriteBurstRegEhPhh)
+                  00004a44    0000002e     b_uart.obj (.text:USCI_A3_ISR)
+                  00004a72    0000002e     b_timer.obj (.text:timer)
+                  00004aa0    00000028     cc1101.obj (.text:_ZN11CC1101Radio17SetLogicalChannelEh)
+                  00004ac8    00000024     cc1101.obj (.text:_ZN11CC1101Radio4InitEv)
+                  00004aec    00000024     rts430x_sc_sd_eabi.lib : fs_utof.asm.obj (.text)
+                  00004b10    00000022     cc1101.obj (.text:_ZN11CC1101Radio10SpiReadRegEh)
+                  00004b32    00000022     cc1101.obj (.text:_ZN11CC1101Radio13SpiReadStatusEh)
+                  00004b54    00000022     cc1101.obj (.text:_ZN11CC1101Radio16SpiReadStatusRegEh)
+                  00004b76    00000020     cc1101.obj (.text:_ZN11CC1101Radio9RxModeOffEv)
+                  00004b96    0000001a     cc1101.obj (.text:_ZN11CC1101Radio11SpiWriteRegEhh)
+                  00004bb0    00000018     cc1101.obj (.text:_ZN11CC1101Radio11SpiTransferEh)
+                  00004bc8    00000016     b_temperature.obj (.text:ADC12ISR)
+                  00004bde    00000016     rts430x_sc_sd_eabi.lib : div16u.asm.obj (.text)
+                  00004bf4    00000014     cc1101.obj (.text:_ZN11CC1101Radio16CheckReceiveFlagEv)
+                  00004c08    00000014     cc1101.obj (.text:_ZN11CC1101Radio9SpiStrobeEh)
+                  00004c1c    00000014     rts430x_sc_sd_eabi.lib : mult16_f5hw.asm.obj (.text)
+                  00004c30    00000010     cc1101.obj (.text:_ZN11CC1101Radio12GetMARCStateEv)
+                  00004c40    00000010     cc1101.obj (.text:_ZN11CC1101Radio4RxOnEv)
+                  00004c50    0000000c     b_timer.obj (.text:Timer0_A0_ISR)
+                  00004c5c    0000000c     b_math.obj (.text:div)
+                  00004c68    0000000c     b_math.obj (.text:mul)
+                  00004c74    0000000a     cfile.obj (.text:_Z3ledv)
+                  00004c7e    0000000a     cc1101.obj (.text:_ZN11CC1101Radio7GDO_SetEv)
+                  00004c88    00000004     b_math.obj (.text:add)
 
-.const     0    00004826    00000031     
-                  00004826    00000019     cc1101.obj (.const:.string:mrfiLogicalChanTable)
-                  0000483f    00000001     --HOLE-- [fill = 0]
-                  00004840    0000000b     cc1101.obj (.const:.string:rate_MDMCFG3)
-                  0000484b    00000001     --HOLE-- [fill = 0]
-                  0000484c    0000000b     cc1101.obj (.const:.string:rate_MDMCFG4)
+.const     0    00004c8c    00000071     
+                  00004c8c    00000028     b_matrix.obj (.const:m2)
+                  00004cb4    00000019     cc1101.obj (.const:.string:mrfiLogicalChanTable)
+                  00004ccd    00000001     --HOLE-- [fill = 0]
+                  00004cce    00000018     b_matrix.obj (.const:m1)
+                  00004ce6    0000000b     cc1101.obj (.const:.string:rate_MDMCFG3)
+                  00004cf1    00000001     --HOLE-- [fill = 0]
+                  00004cf2    0000000b     cc1101.obj (.const:.string:rate_MDMCFG4)
 
 .text:_isr 
-*          0    00004858    00000008     
-                  00004858    00000008     rts430x_sc_sd_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
+*          0    00004cfe    00000008     
+                  00004cfe    00000008     rts430x_sc_sd_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
 
-.data      0    00001c00    000000b2     
-                  00001c00    0000005c     main.obj (.data)
-                  00001c5c    0000003d     cfile.obj (.data:rx_buffer)
-                  00001c99    00000001     --HOLE-- [fill = 0]
-                  00001c9a    00000009     cfile.obj (.data)
-                  00001ca3    00000001     --HOLE-- [fill = 0]
-                  00001ca4    00000008     cc1101.obj (.data:PaTabel)
-                  00001cac    00000004     cc1101.obj (.data)
-                  00001cb0    00000002     b_uart.obj (.data)
+.data      0    00001c00    00000056     
+                  00001c00    0000003d     cfile.obj (.data:rx_buffer)
+                  00001c3d    00000001     --HOLE-- [fill = 0]
+                  00001c3e    00000009     cfile.obj (.data)
+                  00001c47    00000001     --HOLE-- [fill = 0]
+                  00001c48    00000008     cc1101.obj (.data:PaTabel)
+                  00001c50    00000004     cc1101.obj (.data)
+                  00001c54    00000002     b_uart.obj (.data)
 
-.bss       0    00001cb2    00000005     UNINITIALIZED
-                  00001cb2    00000002     (.common:temp)
-                  00001cb4    00000001     (.common:Radio)
-                  00001cb5    00000001     (.common:flag)
-                  00001cb6    00000001     (.common:sizerx)
+.bss       0    00001c56    0000000d     UNINITIALIZED
+                  00001c56    00000004     (.common:temperatureDegC)
+                  00001c5a    00000004     (.common:temperatureDegF)
+                  00001c5e    00000002     (.common:temp)
+                  00001c60    00000001     (.common:Radio)
+                  00001c61    00000001     (.common:flag)
+                  00001c62    00000001     (.common:sizerx)
 
 .stack     0    00002c00    00000000     
 
@@ -308,59 +325,67 @@ $fill002   0    0000ff88    00000008
 
 MODULE SUMMARY
 
-       Module              code   ro data   rw data
-       ------              ----   -------   -------
+       Module                code   ro data   rw data
+       ------                ----   -------   -------
     .\
-       cc1101.obj          1114   47        13     
-       main.obj            764    2         92     
-       cfile.obj           128    0         72     
-       b_uart.obj          46     2         2      
-       b_temperature.obj   22     2         2      
-       b_timer.obj         12     2         0      
-    +--+-------------------+------+---------+---------+
-       Total:              2086   55        181    
-                                                   
+       cc1101.obj            1114   47        13     
+       main.obj              578    2         0      
+       b_temperature.obj     238    2         10     
+       b_matrix.obj          144    64        0      
+       cfile.obj             128    0         72     
+       b_uart.obj            126    2         2      
+       b_math.obj            90     0         0      
+       b_timer.obj           58     2         0      
+    +--+---------------------+------+---------+---------+
+       Total:                2476   119       97     
+                                                     
     C:\ti\ccs1120\ccs\tools\compiler\ti-cgt-msp430_21.6.1.LTS\lib\rts430x_sc_sd_eabi.lib
-       isr_trap.asm.obj    8      0         0      
-       int18.asm.obj       0      2         0      
-       int19.asm.obj       0      2         0      
-       int20.asm.obj       0      2         0      
-       int21.asm.obj       0      2         0      
-       int22.asm.obj       0      2         0      
-       int23.asm.obj       0      2         0      
-       int25.asm.obj       0      2         0      
-       int26.asm.obj       0      2         0      
-       int27.asm.obj       0      2         0      
-       int28.asm.obj       0      2         0      
-       int29.asm.obj       0      2         0      
-       int30.asm.obj       0      2         0      
-       int31.asm.obj       0      2         0      
-       int32.asm.obj       0      2         0      
-       int33.asm.obj       0      2         0      
-       int34.asm.obj       0      2         0      
-       int35.asm.obj       0      2         0      
-       int36.asm.obj       0      2         0      
-       int37.asm.obj       0      2         0      
-       int38.asm.obj       0      2         0      
-       int39.asm.obj       0      2         0      
-       int40.asm.obj       0      2         0      
-       int41.asm.obj       0      2         0      
-       int42.asm.obj       0      2         0      
-       int43.asm.obj       0      2         0      
-       int44.asm.obj       0      2         0      
-       int47.asm.obj       0      2         0      
-       int48.asm.obj       0      2         0      
-       int49.asm.obj       0      2         0      
-       int50.asm.obj       0      2         0      
-       int51.asm.obj       0      2         0      
-       int52.asm.obj       0      2         0      
-       int53.asm.obj       0      2         0      
-       int54.asm.obj       0      2         0      
-    +--+-------------------+------+---------+---------+
-       Total:              8      68        0      
-                                                   
-    +--+-------------------+------+---------+---------+
-       Grand Total:        2094   123       181    
+       fs_add.asm.obj        306    0         0      
+       fs_mpy.asm.obj        196    0         0      
+       fs_div.asm.obj        156    0         0      
+       fs_utof.asm.obj       36     0         0      
+       div16u.asm.obj        22     0         0      
+       mult16_f5hw.asm.obj   20     0         0      
+       isr_trap.asm.obj      8      0         0      
+       int18.asm.obj         0      2         0      
+       int19.asm.obj         0      2         0      
+       int20.asm.obj         0      2         0      
+       int21.asm.obj         0      2         0      
+       int22.asm.obj         0      2         0      
+       int23.asm.obj         0      2         0      
+       int25.asm.obj         0      2         0      
+       int26.asm.obj         0      2         0      
+       int27.asm.obj         0      2         0      
+       int28.asm.obj         0      2         0      
+       int29.asm.obj         0      2         0      
+       int30.asm.obj         0      2         0      
+       int31.asm.obj         0      2         0      
+       int32.asm.obj         0      2         0      
+       int33.asm.obj         0      2         0      
+       int34.asm.obj         0      2         0      
+       int35.asm.obj         0      2         0      
+       int36.asm.obj         0      2         0      
+       int37.asm.obj         0      2         0      
+       int38.asm.obj         0      2         0      
+       int39.asm.obj         0      2         0      
+       int40.asm.obj         0      2         0      
+       int41.asm.obj         0      2         0      
+       int42.asm.obj         0      2         0      
+       int43.asm.obj         0      2         0      
+       int44.asm.obj         0      2         0      
+       int47.asm.obj         0      2         0      
+       int48.asm.obj         0      2         0      
+       int49.asm.obj         0      2         0      
+       int50.asm.obj         0      2         0      
+       int51.asm.obj         0      2         0      
+       int52.asm.obj         0      2         0      
+       int53.asm.obj         0      2         0      
+       int54.asm.obj         0      2         0      
+    +--+---------------------+------+---------+---------+
+       Total:                744    68        0      
+                                                     
+    +--+---------------------+------+---------+---------+
+       Grand Total:          3220   187       97     
 
 
 GLOBAL SYMBOLS: SORTED ALPHABETICALLY BY Name 
@@ -400,7 +425,7 @@ address   name
 00000810  ADC12IFGR2                             
 00000811  ADC12IFGR2_H                           
 00000810  ADC12IFGR2_L                           
-000047a8  ADC12ISR                               
+00004bc8  ADC12ISR                               
 00000818  ADC12IV                                
 00000819  ADC12IV_H                              
 00000818  ADC12IV_L                              
@@ -1250,7 +1275,7 @@ address   name
 0000012a  PMMIFG                                 
 0000012b  PMMIFG_H                               
 0000012a  PMMIFG_L                               
-00001ca4  PaTabel                                
+00001c48  PaTabel                                
 00000158  RCCTL0                                 
 00000159  RCCTL0_H                               
 00000158  RCCTL0_L                               
@@ -1330,8 +1355,8 @@ address   name
 000004b6  RTCYEAR                                
 000004b7  RTCYEAR_H                              
 000004b6  RTCYEAR_L                              
-00001cb0  RXData                                 
-00001cb4  Radio                                  
+00001c54  RXData                                 
+00001c60  Radio                                  
 00000100  SFRIE1                                 
 00000101  SFRIE1_H                               
 00000100  SFRIE1_L                               
@@ -1563,8 +1588,8 @@ address   name
 000003d0  TB0R                                   
 000003d1  TB0R_H                                 
 000003d0  TB0R_L                                 
-00001cb1  TXData                                 
-00004806  Timer0_A0_ISR                          
+00001c55  TXData                                 
+00004c50  Timer0_A0_ISR                          
 000005d0  UCA0ABCTL                              
 000005d1  UCA0ABCTL_H                            
 000005d0  UCA0ABCTL_L                            
@@ -1913,34 +1938,34 @@ address   name
 0000070e  UCB3TXBUF                              
 0000070f  UCB3TXBUF_H                            
 0000070e  UCB3TXBUF_L                            
-00004676  USCI_A3_ISR                            
+00004a44  USCI_A3_ISR                            
 0000015c  WDTCTL                                 
 0000015d  WDTCTL_H                               
 0000015c  WDTCTL_L                               
-00004812  _Z3ledv                                
-000046f0  _ZN11CC1101Radio10SpiReadRegEh         
-0000448a  _ZN11CC1101Radio11ReceiveDataEPh       
-000045da  _ZN11CC1101Radio11SetDataRateEh        
-00004790  _ZN11CC1101Radio11SpiTransferEh        
-00004776  _ZN11CC1101Radio11SpiWriteRegEhh       
-000047e6  _ZN11CC1101Radio12GetMARCStateEv       
-00004712  _ZN11CC1101Radio13SpiReadStatusEh      
-0000460e  _ZN11CC1101Radio15SpiReadBurstRegEhPhh 
-000047be  _ZN11CC1101Radio16CheckReceiveFlagEv   
-00004734  _ZN11CC1101Radio16SpiReadStatusRegEh   
-00004642  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
-000042fc  _ZN11CC1101Radio17RegConfigSettingsEv  
-000046a4  _ZN11CC1101Radio17SetLogicalChannelEh  
-000046cc  _ZN11CC1101Radio4InitEv                
-000047f6  _ZN11CC1101Radio4RxOnEv                
-000044e2  _ZN11CC1101Radio5ResetEv               
-0000481c  _ZN11CC1101Radio7GDO_SetEv             
-00004566  _ZN11CC1101Radio7SpiInitEv             
-00004756  _ZN11CC1101Radio9RxModeOffEv           
-000047d2  _ZN11CC1101Radio9SpiStrobeEh           
+00004c74  _Z3ledv                                
+00004b10  _ZN11CC1101Radio10SpiReadRegEh         
+000047ca  _ZN11CC1101Radio11ReceiveDataEPh       
+000049a8  _ZN11CC1101Radio11SetDataRateEh        
+00004bb0  _ZN11CC1101Radio11SpiTransferEh        
+00004b96  _ZN11CC1101Radio11SpiWriteRegEhh       
+00004c30  _ZN11CC1101Radio12GetMARCStateEv       
+00004b32  _ZN11CC1101Radio13SpiReadStatusEh      
+000049dc  _ZN11CC1101Radio15SpiReadBurstRegEhPhh 
+00004bf4  _ZN11CC1101Radio16CheckReceiveFlagEv   
+00004b54  _ZN11CC1101Radio16SpiReadStatusRegEh   
+00004a10  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
+00004242  _ZN11CC1101Radio17RegConfigSettingsEv  
+00004aa0  _ZN11CC1101Radio17SetLogicalChannelEh  
+00004ac8  _ZN11CC1101Radio4InitEv                
+00004c40  _ZN11CC1101Radio4RxOnEv                
+00004872  _ZN11CC1101Radio5ResetEv               
+00004c7e  _ZN11CC1101Radio7GDO_SetEv             
+00004934  _ZN11CC1101Radio7SpiInitEv             
+00004b76  _ZN11CC1101Radio9RxModeOffEv           
+00004c08  _ZN11CC1101Radio9SpiStrobeEh           
 00002c00  __STACK_END                            
 00000000  __STACK_SIZE                           
-00004858  __TI_ISR_TRAP                          
+00004cfe  __TI_ISR_TRAP                          
 0000ffb4  __TI_int18                             
 0000ffb6  __TI_int19                             
 0000ffb8  __TI_int20                             
@@ -1983,29 +2008,49 @@ ffffffff  __TI_prof_data_size
 ffffffff  __TI_prof_data_start                   
 ffffffff  __c_args__                             
 00000001  __mpu_enable                           
-00001c9c  br_base                                
-00004528  check_update                           
-00001ca0  checkpoint_buffer                      
-00001cae  dataRateNdx                            
-00001cb5  flag                                   
+000043d6  __mspabi_addf                          
+0000469e  __mspabi_divf                          
+00004bde  __mspabi_divu                          
+00004aec  __mspabi_fltuf                         
+000045da  __mspabi_mpyf                          
+00004c1c  __mspabi_mpyi_f5hw                     
+00004bde  __mspabi_remu                          
+000043d0  __mspabi_subf                          
+00004c88  add                                    
+00001c40  br_base                                
+000048b8  check_update                           
+00001c44  checkpoint_buffer                      
+00001c52  dataRateNdx                            
+00004c5c  div                                    
+00001c61  flag                                   
 00004000  fram_ipe_end                           
 00004000  fram_ipe_start                         
 00004000  fram_rw_start                          
 00004000  fram_rx_start                          
-00001c9e  free_address                           
-000045a2  init                                   
+00001c42  free_address                           
+00004970  init                                   
+00004cce  m1                                     
+00004c8c  m2                                     
+000048f6  math                                   
+0000473a  matrix                                 
 0000a501  mpu_ctl0_value                         
 00001513  mpu_sam_value                          
 00000400  mpu_segment_border1                    
 00000400  mpu_segment_border2                    
-00001cac  mrfiRadioState                         
-00001c9a  nop_value                              
-00001caf  packetLength                           
-00001cad  rfPowerNdx                             
-00001c5c  rx_buffer                              
-00001cb6  sizerx                                 
-00001cb2  temp                                   
-00001ca2  update_avail                           
+00001c50  mrfiRadioState                         
+00004c68  mul                                    
+00001c3e  nop_value                              
+00001c53  packetLength                           
+00001c51  rfPowerNdx                             
+00001c00  rx_buffer                              
+00001c62  sizerx                                 
+00001c5e  temp                                   
+00004502  temperature                            
+00001c56  temperatureDegC                        
+00001c5a  temperatureDegF                        
+00004a72  timer                                  
+00004822  uart                                   
+00001c46  update_avail                           
 
 
 GLOBAL SYMBOLS: SORTED BY Symbol Address 
@@ -3559,56 +3604,76 @@ address   name
 00000afc  LEAIVL                                 
 00000afe  LEAIVH                                 
 00001513  mpu_sam_value                          
-00001c5c  rx_buffer                              
-00001c9a  nop_value                              
-00001c9c  br_base                                
-00001c9e  free_address                           
-00001ca0  checkpoint_buffer                      
-00001ca2  update_avail                           
-00001ca4  PaTabel                                
-00001cac  mrfiRadioState                         
-00001cad  rfPowerNdx                             
-00001cae  dataRateNdx                            
-00001caf  packetLength                           
-00001cb0  RXData                                 
-00001cb1  TXData                                 
-00001cb2  temp                                   
-00001cb4  Radio                                  
-00001cb5  flag                                   
-00001cb6  sizerx                                 
+00001c00  rx_buffer                              
+00001c3e  nop_value                              
+00001c40  br_base                                
+00001c42  free_address                           
+00001c44  checkpoint_buffer                      
+00001c46  update_avail                           
+00001c48  PaTabel                                
+00001c50  mrfiRadioState                         
+00001c51  rfPowerNdx                             
+00001c52  dataRateNdx                            
+00001c53  packetLength                           
+00001c54  RXData                                 
+00001c55  TXData                                 
+00001c56  temperatureDegC                        
+00001c5a  temperatureDegF                        
+00001c5e  temp                                   
+00001c60  Radio                                  
+00001c61  flag                                   
+00001c62  sizerx                                 
 00002c00  __STACK_END                            
 00004000  RESET                                  
 00004000  fram_ipe_end                           
 00004000  fram_ipe_start                         
 00004000  fram_rw_start                          
 00004000  fram_rx_start                          
-000042fc  _ZN11CC1101Radio17RegConfigSettingsEv  
-0000448a  _ZN11CC1101Radio11ReceiveDataEPh       
-000044e2  _ZN11CC1101Radio5ResetEv               
-00004528  check_update                           
-00004566  _ZN11CC1101Radio7SpiInitEv             
-000045a2  init                                   
-000045da  _ZN11CC1101Radio11SetDataRateEh        
-0000460e  _ZN11CC1101Radio15SpiReadBurstRegEhPhh 
-00004642  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
-00004676  USCI_A3_ISR                            
-000046a4  _ZN11CC1101Radio17SetLogicalChannelEh  
-000046cc  _ZN11CC1101Radio4InitEv                
-000046f0  _ZN11CC1101Radio10SpiReadRegEh         
-00004712  _ZN11CC1101Radio13SpiReadStatusEh      
-00004734  _ZN11CC1101Radio16SpiReadStatusRegEh   
-00004756  _ZN11CC1101Radio9RxModeOffEv           
-00004776  _ZN11CC1101Radio11SpiWriteRegEhh       
-00004790  _ZN11CC1101Radio11SpiTransferEh        
-000047a8  ADC12ISR                               
-000047be  _ZN11CC1101Radio16CheckReceiveFlagEv   
-000047d2  _ZN11CC1101Radio9SpiStrobeEh           
-000047e6  _ZN11CC1101Radio12GetMARCStateEv       
-000047f6  _ZN11CC1101Radio4RxOnEv                
-00004806  Timer0_A0_ISR                          
-00004812  _Z3ledv                                
-0000481c  _ZN11CC1101Radio7GDO_SetEv             
-00004858  __TI_ISR_TRAP                          
+00004242  _ZN11CC1101Radio17RegConfigSettingsEv  
+000043d0  __mspabi_subf                          
+000043d6  __mspabi_addf                          
+00004502  temperature                            
+000045da  __mspabi_mpyf                          
+0000469e  __mspabi_divf                          
+0000473a  matrix                                 
+000047ca  _ZN11CC1101Radio11ReceiveDataEPh       
+00004822  uart                                   
+00004872  _ZN11CC1101Radio5ResetEv               
+000048b8  check_update                           
+000048f6  math                                   
+00004934  _ZN11CC1101Radio7SpiInitEv             
+00004970  init                                   
+000049a8  _ZN11CC1101Radio11SetDataRateEh        
+000049dc  _ZN11CC1101Radio15SpiReadBurstRegEhPhh 
+00004a10  _ZN11CC1101Radio16SpiWriteBurstRegEhPhh
+00004a44  USCI_A3_ISR                            
+00004a72  timer                                  
+00004aa0  _ZN11CC1101Radio17SetLogicalChannelEh  
+00004ac8  _ZN11CC1101Radio4InitEv                
+00004aec  __mspabi_fltuf                         
+00004b10  _ZN11CC1101Radio10SpiReadRegEh         
+00004b32  _ZN11CC1101Radio13SpiReadStatusEh      
+00004b54  _ZN11CC1101Radio16SpiReadStatusRegEh   
+00004b76  _ZN11CC1101Radio9RxModeOffEv           
+00004b96  _ZN11CC1101Radio11SpiWriteRegEhh       
+00004bb0  _ZN11CC1101Radio11SpiTransferEh        
+00004bc8  ADC12ISR                               
+00004bde  __mspabi_divu                          
+00004bde  __mspabi_remu                          
+00004bf4  _ZN11CC1101Radio16CheckReceiveFlagEv   
+00004c08  _ZN11CC1101Radio9SpiStrobeEh           
+00004c1c  __mspabi_mpyi_f5hw                     
+00004c30  _ZN11CC1101Radio12GetMARCStateEv       
+00004c40  _ZN11CC1101Radio4RxOnEv                
+00004c50  Timer0_A0_ISR                          
+00004c5c  div                                    
+00004c68  mul                                    
+00004c74  _Z3ledv                                
+00004c7e  _ZN11CC1101Radio7GDO_SetEv             
+00004c88  add                                    
+00004c8c  m2                                     
+00004cce  m1                                     
+00004cfe  __TI_ISR_TRAP                          
 0000a501  mpu_ctl0_value                         
 0000ffb4  __TI_int18                             
 0000ffb6  __TI_int19                             
@@ -3652,4 +3717,4 @@ ffffffff  __TI_prof_data_size
 ffffffff  __TI_prof_data_start                   
 ffffffff  __c_args__                             
 
-[1639 symbols]
+[1659 symbols]

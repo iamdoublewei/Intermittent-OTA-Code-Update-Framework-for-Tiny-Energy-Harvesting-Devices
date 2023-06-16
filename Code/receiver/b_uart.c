@@ -96,13 +96,10 @@ extern int uart(void)
     UCA3CTLW0 &= ~UCSWRST;                  // release from reset
     UCA3IE |= UCRXIE;                       // Enable USCI_A3 RX interrupt
 
-    while (1)
-    {
-        while(!(UCA3IFG & UCTXIFG));
-        UCA3TXBUF = TXData;                 // Load data onto buffer
+    while(!(UCA3IFG & UCTXIFG));
+    UCA3TXBUF = TXData;                 // Load data onto buffer
 
-        __bis_SR_register(GIE);             // interrupts enabled
-    }
+    __bis_SR_register(GIE);             // interrupts enabled
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -173,13 +170,10 @@ void __attribute__ ((interrupt(EUSCI_A3_VECTOR))) USCI_A3_ISR (void)
 //    UCA3CTLW0 &= ~UCSWRST;                   // release from reset
 //    UCA3IE |= UCRXIE;                       // Enable USCI_A3 RX interrupt
 //
-//    while (1)
-//    {
-//        while(!(UCA3IFG & UCTXIFG));
-//        UCA3TXBUF = TXData;                 // Load data onto buffer
+//    while(!(UCA3IFG & UCTXIFG));
+//    UCA3TXBUF = TXData;                 // Load data onto buffer
 //
-//        __bis_SR_register(GIE);             // interrupts enabled
-//    }
+//    __bis_SR_register(GIE);             // interrupts enabled
 //}
 //
 //#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
