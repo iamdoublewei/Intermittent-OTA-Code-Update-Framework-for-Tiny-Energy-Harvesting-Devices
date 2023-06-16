@@ -8,8 +8,10 @@
 #ifndef CHEADER_H_
 #define CHEADER_H_
 
-extern uint16_t free_address = 0x5100;
-extern uint16_t checkpoint_buffer = 0x53E8;
+extern uint16_t nop_value = 835; //hex value: 0x0343
+extern uint16_t br_base = 16432; //hex value: 0x4030
+extern uint16_t free_address = 20480; //hex value: 0x5000
+extern uint16_t checkpoint_buffer = 21480;
 extern uint8_t update_avail = 0;
 extern uint8_t rx_buffer[61] = {0};
 extern "C" {

@@ -1,0 +1,1 @@
+"./b_math.obj" "./b_matrix.obj" "./b_temperature.obj" "./b_timer.obj" "./b_uart.obj" "./cc1101.obj" "./cfile.obj" "./main.obj" "../lnk_msp430fr5994.cmd" -llibmpu_init.a -llibmath.a -llibc.a 

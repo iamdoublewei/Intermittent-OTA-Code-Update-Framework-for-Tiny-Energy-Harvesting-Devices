@@ -1,7 +1,0 @@
-"./cc1101.obj"
-"./cfile.obj"
-"./main.obj"
-"../lnk_msp430fr5994.cmd"
--llibmpu_init.a
--llibmath.a
--llibc.a
