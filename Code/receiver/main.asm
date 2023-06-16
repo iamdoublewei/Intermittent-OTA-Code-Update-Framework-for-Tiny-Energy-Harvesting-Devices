@@ -2,8 +2,12 @@
 ; main.asm
 ; Author: Wei Wei
 ; Vesion: 1.1
-; Last Edited: 12/27/2022
+; Last Edited: 06/16/2023
 ; Email: iamdoublewei@gmail.com
+;
+; instruction:
+; 1. connect MSP430FR5994 microUSB to PC to have stable power supply and debugging
+; 2. connect P1.2 and ground to function generator to simulate energy harvesting power supply
 
 ;--------------------------------------------------------------------------------
 ; MSP430 jump instruction encoding calculation (currently not used)
@@ -86,6 +90,34 @@
 ; 				sub.w	R14,R12
 ; 				subc.w	R15,R13
 
+;---------------------------------------------------------------------
+; Function: 	div
+; Description:  unsigned 32/16 division, R12|R13 / R14 = R15, Remainder
+; in R12
+; Register used:R12: dividend high word
+;               R13: dividend low word
+;               R14: divisor
+;               R15: result
+;               R11: counter
+
+;div:        	clr     R15        				;1C
+;            	clr     R12        				;only 16/16 really
+;            	mov     #17,R11        			;2C    -4C ENTRY
+;div_l1     		cmp     R14,R12        			;1C
+;            	jlo     div_l2        			;2C
+;            	sub     R14,R12        			;1C    -4C WORST CASE
+;div_l2    		rlc     R15        				;1C
+;            	jc      div_l4        			;2C
+;            	dec     R11        				;1C
+;            	jz      div_l4        			;2C    -6C ON LAST BIT
+;            	rla     R13        				;1C
+;            	rlc     R12        				;1C
+;            	jnc     div_l1        			;2C
+;				sub     R14,R12        			;1C
+;            	setc            				;2C
+;            	jmp     div_l2        			;2C    -15C WORST
+;div_l4	    	ret            					;3C
+
 ;-------------------------------------------------------------------------------
             	.cdecls C,LIST,"msp430.h"       ; Include device header file
             
@@ -148,24 +180,26 @@ setup_gpio     	bic.b   #BIT0,&P1OUT            ; clear P1.0 output latch for a 
             	bis.b   #BIT1,&P1DIR            ; set P1.1 to output direction
 unlock_gpio  	bic.w   #LOCKLPM5,&PM5CTL0      ; disable the GPIO power-on default high-impedance mode to activate
                                             	; previously configured port settings
-;setup_adc12  	mov.w   #ADC12SHT0_2+ADC12ON,&ADC12CTL0 ; 16x
-;            	bis.w   #ADC12SHP,&ADC12CTL1    ; ADCCLK = MODOSC; sampling timer
-;            	bis.w   #ADC12RES_2,&ADC12CTL2  ; 12-bit conversion results
-;            	bis.w   #ADC12INCH_2,&ADC12MCTL0; A2 ADC input select; Vref=AVCC
-;            	bis.w   #ADC12IE0,&ADC12IER0    ; Enable ADC conv complete interrupt
-;setup_timer     mov.w   #CCIE,&TA0CCTL0         ; TACCR0 interrupt enabled
-;            	mov.w   #50000,&TA0CCR0
-;            	mov.w   #TASSEL__SMCLK+MC__CONTINOUS,&TA0CTL  ; SMCLK, continuous mode
-;            	nop
-;            	bis.w   #GIE,SR            		; Enable interrupt
-;            	nop                             ; for debug
+setup_adc12		bis.w   #BIT2,&P1SEL1    			; Configure P1.2 for ADC
+				bis.w	#BIT2,&P1SEL0
+				mov.w   #ADC12SHT0_2+ADC12ON,&ADC12CTL0 ; 16x
+            	bis.w   #ADC12SHP,&ADC12CTL1    ; ADCCLK = MODOSC; sampling timer
+            	bis.w   #ADC12RES_2,&ADC12CTL2  ; 12-bit conversion results
+            	bis.w   #ADC12INCH_2,&ADC12MCTL0; A2 ADC input select; Vref=AVCC
+            	bis.w   #ADC12IE0,&ADC12IER0    ; Enable ADC conv complete interrupt
+setup_timer     mov.w   #CCIE,&TA0CCTL0         ; TACCR0 interrupt enabled
+            	mov.w   #50000,&TA0CCR0
+            	mov.w   #TASSEL__SMCLK+MC__CONTINOUS,&TA0CTL  ; SMCLK, continuous mode
+            	nop
+            	bis.w   #GIE,SR            		; Enable interrupt
+            	nop                             ; for debug
 				call 	#init
-
-_loop			call 	#timer					; benchmark
-				call	#temperature
+												; benchmark
+_loop			;call 	#timer					; incompatible, can be fix by using another timer in main code
+				;call	#temperature			; incompatible, since only 1 adc12 is avaiable, this benchmark will have comflict with main program.
 				call	#math
-				call	#matrix
-				call 	#uart
+				;call	#matrix
+				;call 	#uart
 				call 	#check_update
     			cmp.b 	#0x01,update_avail     	; compare with #1 value
     			jnz 	_loop      	 			; repeat loop if not equal
@@ -419,93 +453,66 @@ wait_l1     	dec.w   R5                     	; decrement R15
             	jnz     wait_l1                 ; delay over?
             	ret
 
-;---------------------------------------------------------------------
-; Function: 	div
-; Description:  unsigned 32/16 division, R12|R13 / R14 = R15, Remainder
-; in R12
-; Register used:R12: dividend high word
-;               R13: dividend low word
-;               R14: divisor
-;               R15: result
-;               R11: counter
-
-div:        	clr     R15        				;1C
-            	clr     R12        				;only 16/16 really
-            	mov     #17,R11        			;2C    -4C ENTRY
-div_l1     		cmp     R14,R12        			;1C
-            	jlo     div_l2        			;2C
-            	sub     R14,R12        			;1C    -4C WORST CASE
-div_l2    		rlc     R15        				;1C
-            	jc      div_l4        			;2C
-            	dec     R11        				;1C
-            	jz      div_l4        			;2C    -6C ON LAST BIT
-            	rla     R13        				;1C
-            	rlc     R12        				;1C
-            	jnc     div_l1        			;2C
-				sub     R14,R12        			;1C
-            	setc            				;2C
-            	jmp     div_l2        			;2C    -15C WORST
-div_l4	    	ret            					;3C
-
 ;-------------------------------------------------------------------------------
 ; ADC12_ISR
 
-;ADC12_ISR										; ADC12 interrupt service routine
-;            	add.w   &ADC12IV,PC             ; add offset to PC
-;            	reti                            ; Vector  0:  No interrupt
-;            	reti                            ; Vector  2:  ADC12MEMx Overflow
-;            	reti                            ; Vector  4:  Conversion time overflow
-;            	reti                            ; Vector  6:  ADC12HI
-;            	reti                            ; Vector  8:  ADC12LO
-;            	reti                            ; Vector 10:  ADC12IN
-;            	jmp     MEM0                    ; Vector 12:  ADC12MEM0 Interrupt
-;            	reti                            ; Vector 14:  ADC12MEM1
-;            	reti                            ; Vector 16:  ADC12MEM2
-;            	reti                            ; Vector 18:  ADC12MEM3
-;            	reti                            ; Vector 20:  ADC12MEM4
-;            	reti                            ; Vector 22:  ADC12MEM5
-;            	reti                            ; Vector 24:  ADC12MEM6
-;            	reti                            ; Vector 26:  ADC12MEM7
-;            	reti                            ; Vector 28:  ADC12MEM8
-;            	reti                            ; Vector 30:  ADC12MEM9
-;            	reti                            ; Vector 32:  ADC12MEM10
-;            	reti                            ; Vector 34:  ADC12MEM11
-;            	reti                            ; Vector 36:  ADC12MEM12
-;            	reti                            ; Vector 38:  ADC12MEM13
-;            	reti                            ; Vector 40:  ADC12MEM14
-;            	reti                            ; Vector 42:  ADC12MEM15
-;            	reti                            ; Vector 44:  ADC12MEM16
-;            	reti                            ; Vector 46:  ADC12MEM17
-;            	reti                            ; Vector 48:  ADC12MEM18
-;            	reti                            ; Vector 50:  ADC12MEM19
-;            	reti                            ; Vector 52:  ADC12MEM20
-;            	reti                            ; Vector 54:  ADC12MEM21
-;            	reti                            ; Vector 56:  ADC12MEM22
-;            	reti                            ; Vector 58:  ADC12MEM23
-;            	reti                            ; Vector 60:  ADC12MEM24
-;            	reti                            ; Vector 62:  ADC12MEM25
-;            	reti                            ; Vector 64:  ADC12MEM26
-;            	reti                            ; Vector 66:  ADC12MEM27
-;            	reti                            ; Vector 68:  ADC12MEM28
-;            	reti                            ; Vector 70:  ADC12MEM29
-;            	reti                            ; Vector 72:  ADC12MEM30
-;            	reti                            ; Vector 74:  ADC12MEM31
-;            	reti                            ; Vector 76:  ADC12RDY
-;MEM0        	bic.b   #BIT0,&P1OUT            ; Clear LED as default
-;            	cmp.w   #0x7FF,&ADC12MEM0       ; ADCMEM > 0.5*Vcc?
-;            	jlo     ExitLPM0                ; No, exit ISR
-;            	bis.b   #BIT1,&P1OUT            ; Yes, set LED
-;            	call	#checkpoint
-;ExitLPM0    	reti
+ADC12_ISR										; ADC12 interrupt service routine
+            	add.w   &ADC12IV,PC             ; add offset to PC
+            	reti                            ; Vector  0:  No interrupt
+            	reti                            ; Vector  2:  ADC12MEMx Overflow
+            	reti                            ; Vector  4:  Conversion time overflow
+            	reti                            ; Vector  6:  ADC12HI
+            	reti                            ; Vector  8:  ADC12LO
+            	reti                            ; Vector 10:  ADC12IN
+            	jmp     MEM0                    ; Vector 12:  ADC12MEM0 Interrupt
+            	reti                            ; Vector 14:  ADC12MEM1
+            	reti                            ; Vector 16:  ADC12MEM2
+            	reti                            ; Vector 18:  ADC12MEM3
+            	reti                            ; Vector 20:  ADC12MEM4
+            	reti                            ; Vector 22:  ADC12MEM5
+            	reti                            ; Vector 24:  ADC12MEM6
+            	reti                            ; Vector 26:  ADC12MEM7
+            	reti                            ; Vector 28:  ADC12MEM8
+            	reti                            ; Vector 30:  ADC12MEM9
+            	reti                            ; Vector 32:  ADC12MEM10
+            	reti                            ; Vector 34:  ADC12MEM11
+            	reti                            ; Vector 36:  ADC12MEM12
+            	reti                            ; Vector 38:  ADC12MEM13
+            	reti                            ; Vector 40:  ADC12MEM14
+            	reti                            ; Vector 42:  ADC12MEM15
+            	reti                            ; Vector 44:  ADC12MEM16
+            	reti                            ; Vector 46:  ADC12MEM17
+            	reti                            ; Vector 48:  ADC12MEM18
+            	reti                            ; Vector 50:  ADC12MEM19
+            	reti                            ; Vector 52:  ADC12MEM20
+            	reti                            ; Vector 54:  ADC12MEM21
+            	reti                            ; Vector 56:  ADC12MEM22
+            	reti                            ; Vector 58:  ADC12MEM23
+            	reti                            ; Vector 60:  ADC12MEM24
+            	reti                            ; Vector 62:  ADC12MEM25
+            	reti                            ; Vector 64:  ADC12MEM26
+            	reti                            ; Vector 66:  ADC12MEM27
+            	reti                            ; Vector 68:  ADC12MEM28
+            	reti                            ; Vector 70:  ADC12MEM29
+            	reti                            ; Vector 72:  ADC12MEM30
+            	reti                            ; Vector 74:  ADC12MEM31
+            	reti                            ; Vector 76:  ADC12RDY
+MEM0        	bic.b   #BIT1,&P1OUT            ; Clear LED as default
+            	cmp.w   #0x7FF,&ADC12MEM0       ; ADCMEM > 0.5*Vcc?
+            	jlo     MEM0_l1                	; No
+            	jmp		ExitLPM0				; Yes
+MEM0_l1         bis.b   #BIT1,&P1OUT
+            	call	#checkpoint
+ExitLPM0    	reti
 
 ;-------------------------------------------------------------------------------
 ; TIMER0_A0_ISR
 
-;TIMER0_A0_ISR									; Timer0_A3 CC0 Interrupt Service Routine
-;            	xor.b   #BIT0,&P1OUT            ; Toggle LED
-;            	bis.w   #ADC12ENC+ADC12SC,&ADC12CTL0 ; Start ADC12 sampling/conversion
-;            	add.w   #50000,&TA0CCR0         ; Add offset to TA0CCR0
-;            	reti
+TIMER0_A0_ISR									; Timer0_A3 CC0 Interrupt Service Routine
+            	bis.b   #BIT0,&P1OUT            ; turn on LED
+            	bis.w   #ADC12ENC+ADC12SC,&ADC12CTL0 ; Start ADC12 sampling/conversion
+            	add.w   #50000,&TA0CCR0         ; Add offset to TA0CCR0
+            	reti
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
@@ -518,8 +525,8 @@ div_l4	    	ret            					;3C
 ;-------------------------------------------------------------------------------
             	.sect   ".reset"                ; MSP430 RESET Vector
             	.short  RESET                   ;
-            	;.sect   ADC12_VECTOR            ; ADC12 Vector
-            	;.short  ADC12_ISR               ;
-;            	.sect   TIMER0_A0_VECTOR        ; Timer0_A3 CC0 Interrupt Vector
-;            	.short  TIMER0_A0_ISR
+            	.sect   ADC12_VECTOR            ; ADC12 Vector
+            	.short  ADC12_ISR               ;
+            	.sect   TIMER0_A0_VECTOR        ; Timer0_A3 CC0 Interrupt Vector
+            	.short  TIMER0_A0_ISR
             	.end
