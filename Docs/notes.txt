@@ -1,0 +1,1 @@
+smclk frequency: https://e2e.ti.com/support/microcontrollers/msp-low-power-microcontrollers-group/msp430/f/msp-low-power-microcontroller-forum/157922/what-is-msp430f5xxx-smclk-default-frequency-at-power-on
